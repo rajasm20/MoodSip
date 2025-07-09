@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1040726950593",
+    "project_id": "moodsip200901",
+    "storage_bucket": "moodsip200901.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1040726950593:android:b0e3982e8b2ad1841e8a40",
+        "android_client_info": {
+          "package_name": "com.example.moodsip"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBcMm3CGJYUAeyXtsAqsgy-QiBzAC52pe8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
