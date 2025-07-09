@@ -1,4 +1,5 @@
 package com.example.moodsip
+
 import android.Manifest
 import android.content.pm.PackageManager
 import android.media.MediaPlayer
@@ -11,6 +12,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
@@ -26,12 +28,14 @@ import androidx.compose.ui.unit.dp
 import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.moodsip.data.DataStoreManager
+import com.example.moodsip.network.WeatherResponse
 import com.example.moodsip.network.WeatherService
 import com.example.moodsip.ui.theme.HydrationAppTheme
 import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.ktx.remoteConfig
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.text.SimpleDateFormat
@@ -53,12 +57,29 @@ class MainActivity : ComponentActivity() {
                 var hydrationGoal by remember { mutableStateOf(8) }
                 val logList = remember { mutableStateListOf<String>() }
                 val mediaPlayer = remember { MediaPlayer.create(context, R.raw.water_splash) }
+                var temperature by remember { mutableStateOf<Float?>(null) }
 
-                // Fetch hydrationGoal from Remote Config
+                // Fetch hydrationGoal from Remote Config and adjust with weather
                 LaunchedEffect(true) {
                     val remoteConfig = Firebase.remoteConfig
-                    remoteConfig.fetchAndActivate().addOnCompleteListener {
-                        hydrationGoal = remoteConfig.getLong("hydration_goal").toInt()
+                    remoteConfig.fetchAndActivate().await()
+                    val baseGoal = remoteConfig.getLong("hydration_goal").toInt()
+
+                    try {
+                        val retrofit = Retrofit.Builder()
+                            .baseUrl("https://api.openweathermap.org/data/2.5/")
+                            .addConverterFactory(GsonConverterFactory.create())
+                            .build()
+
+                        val service = retrofit.create(WeatherService::class.java)
+                        val response = service.getWeather("London", "f7b60d5f4218e4937e14d28b42888bc5") // Replace with your API key
+                        val temp = response.main.temp
+                        temperature = temp
+                        val tempAdjustment = ((temp - 25) / 5).toInt().coerceAtLeast(0)
+                        hydrationGoal = baseGoal + tempAdjustment
+                    } catch (e: Exception) {
+                        Log.e("Weather", "Weather fetch failed", e)
+                        hydrationGoal = baseGoal
                     }
                 }
 
@@ -78,11 +99,17 @@ class MainActivity : ComponentActivity() {
                     ) {
                         Text("Hydration Tracker", style = MaterialTheme.typography.headlineMedium)
 
+                        temperature?.let {
+                            Text("🌡 ${it.toInt()}°C in London — Goal: $hydrationGoal glasses", style = MaterialTheme.typography.bodyMedium)
+                        }
+
                         Spacer(modifier = Modifier.height(16.dp))
 
                         Row(
-                            horizontalArrangement = Arrangement.SpaceEvenly,
-                            modifier = Modifier.fillMaxWidth()
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .horizontalScroll(rememberScrollState())
                         ) {
                             for (i in 0 until hydrationGoal) {
                                 val isFilled = i < glassCount
@@ -134,4 +161,3 @@ class MainActivity : ComponentActivity() {
         }
     }
 }
-
