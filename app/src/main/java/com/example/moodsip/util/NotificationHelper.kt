@@ -19,17 +19,46 @@ object NotificationHelper {
 
         val message = when (risk.lowercase()) {
             "high" -> "🚨 High dehydration risk! Drink water now!"
-            "medium" -> "💧 You're halfway. Stay on track."
+            "medium" -> "⚠️ Don’t slow down now! Hydration is key to energy!"
             else -> "✅ Doing great! Keep up the streak!"
         }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_notification) // Replace with your actual icon
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle("Hydration Reminder")
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .build()
 
         manager.notify(1, notification)
+    }
+
+    fun showFirstGlassNotification(context: Context) {
+        showCustomNotification(context, "🌅 Good morning!", "Great start to your hydration journey today!")
+    }
+
+    fun showHalfwayNotification(context: Context) {
+        showCustomNotification(context, "🥤 Halfway there!", "You’re doing great, keep sipping!")
+    }
+
+    fun showAlmostThereNotification(context: Context) {
+        showCustomNotification(context, "🚰 Almost there!", "Just one more glass to reach your goal!")
+    }
+
+    private fun showCustomNotification(context: Context, title: String, message: String) {
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(CHANNEL_ID, "Hydration Reminders", NotificationManager.IMPORTANCE_HIGH)
+            manager.createNotificationChannel(channel)
+        }
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(title)
+            .setContentText(message)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+        manager.notify((0..1000).random(), notification)
     }
 }

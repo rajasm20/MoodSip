@@ -33,6 +33,7 @@ import com.example.moodsip.worker.HydrationWorker
 import com.example.moodsip.network.WeatherResponse
 import com.example.moodsip.network.WeatherService
 import com.example.moodsip.ui.theme.HydrationAppTheme
+import com.example.moodsip.util.NotificationHelper
 import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.ktx.remoteConfig
@@ -161,6 +162,12 @@ class MainActivity : ComponentActivity() {
 
                                                 logList.add("Drank at $timestamp")
                                                 mediaPlayer.start()
+
+                                                when (glassCount) {
+                                                    1 -> NotificationHelper.showFirstGlassNotification(context)
+                                                    hydrationGoal / 2 -> NotificationHelper.showHalfwayNotification(context)
+                                                    hydrationGoal - 1 -> NotificationHelper.showAlmostThereNotification(context)
+                                                }
 
                                                 val bundle = Bundle().apply {
                                                     putInt("glass_count", glassCount)
