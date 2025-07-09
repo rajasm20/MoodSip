@@ -45,6 +45,16 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         val analytics = Firebase.analytics
         dataStore = DataStoreManager(this)
+        fun formatLogTime(raw: String): String {
+            return try {
+                val parser = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
+                val formatter = SimpleDateFormat("h:mm a", Locale.getDefault())
+                val time = parser.parse(raw.removePrefix("Drank at ")) ?: return raw
+                "Drank at ${formatter.format(time)}"
+            } catch (e: Exception) {
+                raw
+            }
+        }
 
         setContent {
             HydrationAppTheme {
@@ -159,7 +169,6 @@ class MainActivity : ComponentActivity() {
 
                         LazyColumn(modifier = Modifier.weight(1f)) {
                             items(logList.size) { index ->
-                                // Added card design for log entries
                                 Card(
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -167,14 +176,21 @@ class MainActivity : ComponentActivity() {
                                     colors = CardDefaults.cardColors(containerColor = Color(0xFFD0F0FF)),
                                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
                                 ) {
-                                    Text(
-                                        text = logList[index],
-                                        modifier = Modifier.padding(12.dp),
-                                        style = MaterialTheme.typography.bodyMedium
-                                    )
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        modifier = Modifier.padding(12.dp)
+                                    ) {
+                                        Text("💧", style = MaterialTheme.typography.bodyLarge)
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(
+                                            text = formatLogTime(logList[index]),
+                                            style = MaterialTheme.typography.bodyMedium
+                                        )
+                                    }
                                 }
                             }
                         }
+
                     }
                 }
             }
