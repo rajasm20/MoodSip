@@ -1,7 +1,5 @@
 package com.example.moodsip
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.util.Log
@@ -25,7 +23,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
-import androidx.core.app.ActivityCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.moodsip.data.DataStoreManager
 import com.example.moodsip.network.WeatherResponse
@@ -113,15 +110,10 @@ class MainActivity : ComponentActivity() {
                         ) {
                             for (i in 0 until hydrationGoal) {
                                 val isFilled = i < glassCount
-                                Image(
-                                    painter = painterResource(
-                                        if (isFilled) R.drawable.glass_filled else R.drawable.glass_empty
-                                    ),
-                                    contentDescription = null,
+                                Box(
                                     modifier = Modifier
                                         .size(48.dp)
                                         .clickable {
-                                            Toast.makeText(context, "Tapped!", Toast.LENGTH_SHORT).show()
                                             if (!isFilled) {
                                                 glassCount++
                                                 scope.launch { dataStore.saveGlasses(glassCount) }
@@ -134,8 +126,23 @@ class MainActivity : ComponentActivity() {
                                                 scope.launch { dataStore.saveGlasses(glassCount) }
                                                 logList.removeLastOrNull()
                                             }
-                                        }
-                                )
+                                        },
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Image(
+                                        painter = painterResource(
+                                            if (isFilled) R.drawable.glass_filled else R.drawable.glass_empty
+                                        ),
+                                        contentDescription = null,
+                                        modifier = Modifier.size(48.dp)
+                                    )
+                                    if (isFilled) {
+                                        Text("-", color = Color.Red, style = MaterialTheme.typography.bodyMedium)
+                                    } else if (i == glassCount) {
+                                        Text("+", color = Color.Blue, style = MaterialTheme.typography.bodyMedium)
+                                    }
+                                }
+
                             }
                         }
 
@@ -152,7 +159,20 @@ class MainActivity : ComponentActivity() {
 
                         LazyColumn(modifier = Modifier.weight(1f)) {
                             items(logList.size) { index ->
-                                Text(logList[index])
+                                // Added card design for log entries
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                                    colors = CardDefaults.cardColors(containerColor = Color(0xFFD0F0FF)),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
+                                ) {
+                                    Text(
+                                        text = logList[index],
+                                        modifier = Modifier.padding(12.dp),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                }
                             }
                         }
                     }
