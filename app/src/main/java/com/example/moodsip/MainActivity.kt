@@ -1,5 +1,5 @@
 package com.example.moodsip
-
+import androidx.work.workDataOf
 import android.media.MediaPlayer
 import android.os.Bundle
 import android.os.Build
@@ -45,7 +45,6 @@ import java.util.*
 
 class MainActivity : ComponentActivity() {
     private lateinit var dataStore: DataStoreManager
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         val analytics = Firebase.analytics
@@ -63,7 +62,7 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             requestPermissions(arrayOf(android.Manifest.permission.POST_NOTIFICATIONS), 1001)
         }
-
+        var latestTemperature: Float? = null
 
         setContent {
             HydrationAppTheme {
@@ -93,6 +92,7 @@ class MainActivity : ComponentActivity() {
                         val response = service.getWeather("London", "f7b60d5f4218e4937e14d28b42888bc5")
                         val temp = response.main.temp
                         temperature = temp
+                        latestTemperature = temp
                         val tempAdjustment = ((temp - 25) / 5).toInt().coerceAtLeast(0)
                         hydrationGoal = baseGoal + tempAdjustment
                     } catch (e: Exception) {
@@ -105,6 +105,12 @@ class MainActivity : ComponentActivity() {
                 LaunchedEffect(Unit) {
                     dataStore.getGlasses().collect {
                         glassCount = it
+                    }
+                }
+                LaunchedEffect(true) {
+                    dataStore.getLogEntriesForToday().collect { entries ->
+                        logList.clear()
+                        logList.addAll(entries.map { "Drank at $it" })
                     }
                 }
 
@@ -143,11 +149,16 @@ class MainActivity : ComponentActivity() {
                                                 else -> "evening"
                                             }
                                             val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+                                            val timestamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
 
                                             if (!isFilled) {
                                                 glassCount++
-                                                scope.launch { dataStore.saveGlasses(glassCount) }
-                                                val timestamp = SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(Date())
+                                                scope.launch {
+                                                    dataStore.saveGlasses(glassCount)
+                                                    dataStore.saveDailyGlasses(today, glassCount)
+                                                    dataStore.saveLogEntry(today, timestamp)
+                                                }
+
                                                 logList.add("Drank at $timestamp")
                                                 mediaPlayer.start()
 
@@ -168,8 +179,11 @@ class MainActivity : ComponentActivity() {
                                                 }
                                             } else {
                                                 glassCount--
-                                                scope.launch { dataStore.saveGlasses(glassCount) }
-                                                logList.removeLastOrNull()
+                                                scope.launch {
+                                                    dataStore.saveGlasses(glassCount)
+                                                    dataStore.saveDailyGlasses(today, glassCount)
+                                                    dataStore.removeLastLogEntry(today)
+                                                }
                                             }
                                         },
                                     contentAlignment = Alignment.Center
@@ -228,9 +242,12 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        val tempToSend = latestTemperature ?: 25f
         /*val workRequest = PeriodicWorkRequestBuilder<HydrationWorker>(
             6, TimeUnit.HOURS
-        ).build()
+        )
+        .setInputData(workDataOf("temperature" to tempToSend))
+        .build()
 
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "hydration_reminder",
@@ -238,7 +255,9 @@ class MainActivity : ComponentActivity() {
             workRequest
         )*/
 
-        val testRequest = OneTimeWorkRequestBuilder<HydrationWorker>().build()
+        val testRequest = OneTimeWorkRequestBuilder<HydrationWorker>()
+            .setInputData(workDataOf("temperature" to tempToSend))
+            .build()
         WorkManager.getInstance(this).enqueue(testRequest)
     }
 }

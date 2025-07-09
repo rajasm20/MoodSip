@@ -2,18 +2,22 @@ package com.example.moodsip.worker
 
 import android.content.Context
 import android.util.Log
-import androidx.work.Worker
+import androidx.work.CoroutineWorker
 import androidx.work.WorkerParameters
+import com.example.moodsip.data.DataStoreManager
 import com.example.moodsip.network.HydrationInput
 import com.example.moodsip.network.RetrofitClient
 import com.example.moodsip.util.NotificationHelper
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.withContext
+import java.text.SimpleDateFormat
 import java.util.*
 
 class HydrationWorker(appContext: Context, workerParams: WorkerParameters) :
-    Worker(appContext, workerParams) {
+    CoroutineWorker(appContext, workerParams) {
 
-    override fun doWork(): Result {
-
+    override suspend fun doWork(): Result = withContext(Dispatchers.IO) {
         val now = Calendar.getInstance()
         val hour = now.get(Calendar.HOUR_OF_DAY)
         val timeOfDay = when (hour) {
@@ -22,15 +26,41 @@ class HydrationWorker(appContext: Context, workerParams: WorkerParameters) :
             else -> "evening"
         }
 
-        val input = HydrationInput(
-            streak = 2,               // Replace with dynamic values
-            avg_glasses = 5.5f,
-            missed_days = 1,
-            temp = 32f,
-            time_of_day = timeOfDay
-        )
+        try {
+            val dataStore = DataStoreManager(applicationContext)
+            val logs = dataStore.getAllLogs().first()
+            val today = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
 
-        return try {
+            var streak = 0
+            var missed = 0
+            var totalGlasses = 0f
+            var daysCounted = 0
+
+            val sortedDates = logs.keys.sortedDescending()
+            for (date in sortedDates.take(7)) {
+                val glasses = logs[date] ?: 0
+                if (glasses > 0) {
+                    streak++
+                    totalGlasses += glasses
+                    daysCounted++
+                } else {
+                    missed++
+                    if (date < today) break // end streak on first missed past day
+                }
+            }
+            val temp = inputData.getFloat("temperature", 25f) // default 25°C
+
+
+            val avg = if (daysCounted > 0) totalGlasses / daysCounted else 0f
+
+            val input = HydrationInput(
+                streak = streak,
+                avg_glasses = avg,
+                missed_days = missed,
+                temp = temp,
+                time_of_day = timeOfDay
+            )
+
             val response = RetrofitClient.instance.predictRisk(input).execute()
             if (response.isSuccessful) {
                 val risk = when (response.body()?.hydration_risk ?: 0) {
