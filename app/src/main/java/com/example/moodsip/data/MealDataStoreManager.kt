@@ -28,23 +28,25 @@ class MealDataStoreManager(private val context: Context) {
     private val Context.dataStore by preferencesDataStore(name = "meal_logs")
     private val gson = Gson()
 
+    private fun keyForDate(date: String) = stringPreferencesKey("meal_logs_$date")
+
     fun getMealsForDate(date: String): Flow<List<MealEntry>> {
-        val key = stringPreferencesKey("meal_logs_$date")
+        val key = keyForDate(date)
         return context.dataStore.data.map { preferences ->
             preferences[key]?.let { json ->
                 val type = object : TypeToken<List<MealEntry>>() {}.type
-                gson.fromJson(json, type)
+                gson.fromJson<List<MealEntry>>(json, type)
             } ?: emptyList()
         }
     }
 
     suspend fun saveMeal(entry: MealEntry) {
-        val key = stringPreferencesKey("meal_logs_${entry.date}")
+        val key = keyForDate(entry.date)
         context.dataStore.edit { preferences ->
             val existingJson = preferences[key]
             val currentList = if (existingJson != null) {
                 val type = object : TypeToken<List<MealEntry>>() {}.type
-                gson.fromJson<List<MealEntry>>(existingJson, type).toMutableList()
+                gson.fromJson<MutableList<MealEntry>>(existingJson, type)
             } else {
                 mutableListOf()
             }
@@ -52,6 +54,21 @@ class MealDataStoreManager(private val context: Context) {
             preferences[key] = gson.toJson(currentList)
         }
     }
+
+    suspend fun deleteMeal(entry: MealEntry) {
+        val key = keyForDate(entry.date)
+        context.dataStore.edit { preferences ->
+            val existingJson = preferences[key]
+            if (existingJson != null) {
+                val type = object : TypeToken<List<MealEntry>>() {}.type
+                val list: List<MealEntry> = gson.fromJson(existingJson, type)
+                val currentList = list.toMutableList() // Now safely cast
+                currentList.removeAll { it.time == entry.time && it.mealName == entry.mealName }
+                preferences[key] = gson.toJson(currentList)
+            }
+        }
+    }
+
 
     fun getTodayDate(): String {
         return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
