@@ -66,6 +66,7 @@ class MainActivity : ComponentActivity() {
         var latestTemperature: Float? = null
 
         setContent {
+            var showCelebration by remember { mutableStateOf(false) }
             HydrationAppTheme {
                 val context = LocalContext.current
                 val scope = rememberCoroutineScope()
@@ -96,6 +97,9 @@ class MainActivity : ComponentActivity() {
                         latestTemperature = temp
                         val tempAdjustment = ((temp - 25) / 5).toInt().coerceAtLeast(0)
                         hydrationGoal = baseGoal + tempAdjustment
+                        if (hydrationGoal >= 10) {
+                            NotificationHelper.showHotWeatherNotification(this@MainActivity)
+                        }
                     } catch (e: Exception) {
                         Log.e("Weather", "Weather fetch failed", e)
                         hydrationGoal = baseGoal
@@ -183,6 +187,7 @@ class MainActivity : ComponentActivity() {
                                                             putInt("streak_days", streakCount)
                                                         })
                                                     }
+                                                    showCelebration = true
                                                 }
                                             } else {
                                                 glassCount--
@@ -247,10 +252,42 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+                if (showCelebration) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(Color(0xAA000000))
+                            .clickable { showCelebration = false },
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Card(
+                            modifier = Modifier
+                                .padding(24.dp)
+                                .fillMaxWidth()
+                                .wrapContentHeight(),
+                            colors = CardDefaults.cardColors(containerColor = Color.White),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+                        ) {
+                            Column(
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                modifier = Modifier.padding(24.dp)
+                            ) {
+                                Text("🎉 Goal Reached!", style = MaterialTheme.typography.headlineSmall)
+                                Spacer(modifier = Modifier.height(12.dp))
+                                Text("You drank all $hydrationGoal glasses today!", style = MaterialTheme.typography.bodyMedium)
+                                Spacer(modifier = Modifier.height(16.dp))
+                                Button(onClick = { showCelebration = false }) {
+                                    Text("Awesome!")
+                                }
+                            }
+                        }
+                    }
+                }
+
             }
         }
         val tempToSend = latestTemperature ?: 25f
-        /*val workRequest = PeriodicWorkRequestBuilder<HydrationWorker>(
+        val workRequest = PeriodicWorkRequestBuilder<HydrationWorker>(
             6, TimeUnit.HOURS
         )
         .setInputData(workDataOf("temperature" to tempToSend))
@@ -260,11 +297,6 @@ class MainActivity : ComponentActivity() {
             "hydration_reminder",
             ExistingPeriodicWorkPolicy.KEEP,
             workRequest
-        )*/
-
-        val testRequest = OneTimeWorkRequestBuilder<HydrationWorker>()
-            .setInputData(workDataOf("temperature" to tempToSend))
-            .build()
-        WorkManager.getInstance(this).enqueue(testRequest)
+        )
     }
 }

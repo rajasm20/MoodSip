@@ -61,4 +61,26 @@ object NotificationHelper {
 
         manager.notify((0..1000).random(), notification)
     }
+
+    fun showHotWeatherNotification(context: Context) {
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "hydration_reminders",
+                "Hydration Reminders",
+                NotificationManager.IMPORTANCE_HIGH
+            )
+            manager.createNotificationChannel(channel)
+        }
+
+        val notification = NotificationCompat.Builder(context, "hydration_reminders")
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("🔥 Heat Alert!")
+            .setContentText("It's hot today! Your hydration goal increased to stay safe.")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .build()
+
+        manager.notify(1002, notification)
+    }
+
 }
