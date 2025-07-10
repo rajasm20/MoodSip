@@ -62,7 +62,7 @@ class MealDataStoreManager(private val context: Context) {
             if (existingJson != null) {
                 val type = object : TypeToken<List<MealEntry>>() {}.type
                 val list: List<MealEntry> = gson.fromJson(existingJson, type)
-                val currentList = list.toMutableList() // Now safely cast
+                val currentList = list.toMutableList()
                 currentList.removeAll { it.time == entry.time && it.mealName == entry.mealName }
                 preferences[key] = gson.toJson(currentList)
             }
@@ -77,4 +77,10 @@ class MealDataStoreManager(private val context: Context) {
     fun getCurrentTime(): String {
         return SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
     }
+    fun getDateDaysAgo(daysAgo: Int): String {
+        val calendar = Calendar.getInstance()
+        calendar.add(Calendar.DATE, -daysAgo)
+        return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(calendar.time)
+    }
+
 }

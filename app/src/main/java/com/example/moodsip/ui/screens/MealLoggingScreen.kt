@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material.icons.filled.Lightbulb
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,14 +22,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moodsip.data.MealDataStoreManager
 import com.example.moodsip.data.MealEntry
+import com.example.moodsip.viewModel.MealInsightViewModel
 import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
 import androidx.compose.material3.SwipeToDismissBox
 import androidx.compose.material3.SwipeToDismissBoxValue
 import androidx.compose.material3.rememberSwipeToDismissBoxState
-
-
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,6 +47,13 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
     val today = mealDataStoreManager.getTodayDate()
 
     val mealLog by mealDataStoreManager.getMealsForDate(today).collectAsState(initial = emptyList())
+
+    val viewModel = remember { MealInsightViewModel(mealDataStoreManager) }
+    var showInsights by remember { mutableStateOf(false) }
+
+    LaunchedEffect(showInsights) {
+        if (showInsights) viewModel.generateInsights()
+    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -69,6 +76,12 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
                             .align(Alignment.Center)
                             .padding(8.dp)
                     )
+                    IconButton(
+                        onClick = { showInsights = true },
+                        modifier = Modifier.align(Alignment.CenterEnd)
+                    ) {
+                        Icon(Icons.Default.Lightbulb, contentDescription = "Insights", tint = Color.Yellow)
+                    }
                 }
             }
             item {
@@ -152,7 +165,7 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
                     confirmValueChange = { value ->
                         if (value == SwipeToDismissBoxValue.EndToStart) {
                             scope.launch { mealDataStoreManager.deleteMeal(entry) }
-                            true // Allow dismissal animation
+                            true
                         } else false
                     }
                 )
@@ -190,10 +203,29 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
                 }
             }
 
+            if (showInsights) {
+                item {
+                    AlertDialog(
+                        onDismissRequest = { showInsights = false },
+                        confirmButton = {
+                            TextButton(onClick = { showInsights = false }) {
+                                Text("Close")
+                            }
+                        },
+                        title = { Text("💡 Insights", fontWeight = FontWeight.Bold) },
+                        text = {
+                            Column {
+                                viewModel.insightMessages.collectAsState().value.forEach { msg ->
+                                    Text("• $msg", modifier = Modifier.padding(vertical = 4.dp))
+                                }
+                            }
+                        }
+                    )
+                }
+            }
         }
     }
 }
-
 @Composable
 fun OrangeSlider(label: String, value: Float, onValueChange: (Float) -> Unit) {
     Column(modifier = Modifier
