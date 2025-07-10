@@ -181,3 +181,36 @@ fun HydrationScreen(
         }
     }
 }
+@Composable
+fun CelebrationOverlay(onDismiss: () -> Unit) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xAA000000))
+            .clickable { onDismiss() },
+        contentAlignment = Alignment.Center
+    ) {
+        Card(
+            modifier = Modifier
+                .padding(24.dp)
+                .fillMaxWidth()
+                .wrapContentHeight(),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier.padding(24.dp)
+            ) {
+                Text("🎉 Goal Reached!", style = MaterialTheme.typography.headlineSmall)
+                Spacer(modifier = Modifier.height(12.dp))
+                Text("You drank all your glasses today!", style = MaterialTheme.typography.bodyMedium)
+                Spacer(modifier = Modifier.height(16.dp))
+                Button(onClick = onDismiss) {
+                    Text("Awesome!")
+                }
+            }
+        }
+    }
+}
+
