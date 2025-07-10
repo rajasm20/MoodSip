@@ -11,6 +11,7 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -68,12 +69,29 @@ fun HydrationScreen(
             modifier = Modifier.fillMaxSize().padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("Hydration Tracker", style = MaterialTheme.typography.headlineMedium)
-            temperature?.let {
-                Text("\uD83C\uDF21 ${it.toInt()}\u00B0C — Goal: $hydrationGoal glasses",
-                    style = MaterialTheme.typography.bodyMedium)
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(72.dp)
+                    .padding(bottom = 16.dp),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text("Hydration Tracker", style = MaterialTheme.typography.titleLarge)
+                    temperature?.let {
+                        Text("🌡 ${it.toInt()}°C • Goal: $hydrationGoal glasses", style = MaterialTheme.typography.bodySmall)
+                    }
+                }
             }
-            Spacer(modifier = Modifier.height(16.dp))
+
 
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

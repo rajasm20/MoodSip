@@ -5,7 +5,9 @@ import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,19 +18,18 @@ import androidx.compose.ui.unit.dp
 import androidx.work.*
 import com.example.moodsip.data.DataStoreManager
 import com.example.moodsip.network.WeatherService
-import com.example.moodsip.ui.screens.CelebrationOverlay
 import com.example.moodsip.ui.screens.HydrationScreen
+import com.example.moodsip.ui.screens.ScreenDestination
+import com.example.moodsip.ui.screens.CelebrationOverlay
 import com.example.moodsip.ui.theme.HydrationAppTheme
-import com.example.moodsip.util.NotificationHelper
 import com.example.moodsip.worker.HydrationWorker
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.ktx.remoteConfig
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
-
-enum class BottomNavDestination { HYDRATION, MEAL_LOG, ANALYTICS }
 
 class MainActivity : ComponentActivity() {
 
@@ -48,10 +49,12 @@ class MainActivity : ComponentActivity() {
         setContent {
             var showCelebration by remember { mutableStateOf(false) }
             var temperature by remember { mutableStateOf<Float?>(null) }
-            var selectedTab by remember { mutableStateOf(BottomNavDestination.HYDRATION) }
+            var selectedScreen by remember { mutableStateOf(ScreenDestination.HYDRATION) }
+            val scope = rememberCoroutineScope()
 
             LaunchedEffect(Unit) {
                 remoteConfig.fetchAndActivate().await()
+
                 try {
                     val retrofit = Retrofit.Builder()
                         .baseUrl("https://api.openweathermap.org/data/2.5/")
@@ -63,16 +66,13 @@ class MainActivity : ComponentActivity() {
                     val temp = response.main.temp
                     temperature = temp
                     latestTemperature = temp
-
                 } catch (e: Exception) {
                     Log.e("Weather", "Fetch failed", e)
                     temperature = null
                 }
 
                 val tempToSend = latestTemperature ?: 25f
-                val workRequest = PeriodicWorkRequestBuilder<HydrationWorker>(
-                    6, TimeUnit.HOURS
-                )
+                val workRequest = PeriodicWorkRequestBuilder<HydrationWorker>(6, TimeUnit.HOURS)
                     .setInputData(workDataOf("temperature" to tempToSend))
                     .build()
 
@@ -86,52 +86,129 @@ class MainActivity : ComponentActivity() {
             HydrationAppTheme {
                 Scaffold(
                     bottomBar = {
-                        NavigationBar(containerColor = Color.LightGray) {
-                            NavigationBarItem(
-                                icon = { Icon(painter = painterResource(id = R.drawable.ic_hydration), contentDescription = "Hydration") },
-                                label = { Text("Hydration") },
-                                selected = selectedTab == BottomNavDestination.HYDRATION,
-                                onClick = { selectedTab = BottomNavDestination.HYDRATION }
-                            )
-                            NavigationBarItem(
-                                icon = { Icon(painter = painterResource(id = R.drawable.ic_meal), contentDescription = "Meal Log") },
-                                label = { Text("Meals") },
-                                selected = selectedTab == BottomNavDestination.MEAL_LOG,
-                                onClick = { selectedTab = BottomNavDestination.MEAL_LOG }
-                            )
-                            NavigationBarItem(
-                                icon = { Icon(painter = painterResource(id = R.drawable.ic_analytics), contentDescription = "Analytics") },
-                                label = { Text("Stats") },
-                                selected = selectedTab == BottomNavDestination.ANALYTICS,
-                                onClick = { selectedTab = BottomNavDestination.ANALYTICS }
-                            )
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 24.dp, vertical = 12.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Card(
+                                shape = RoundedCornerShape(24.dp),
+                                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(64.dp)
+                            ) {
+                                NavigationBar(
+                                    containerColor = Color.Transparent,
+                                    tonalElevation = 0.dp
+                                ) {
+                                    NavigationBarItem(
+                                        icon = {
+                                            Icon(
+                                                painter = painterResource(id = R.drawable.ic_hydration),
+                                                contentDescription = "Hydration",
+                                                tint = if (selectedScreen == ScreenDestination.HYDRATION) Color(0xFF2196F3) else Color.Unspecified
+                                            )
+                                        },
+                                        label = {
+                                            Text(
+                                                "Hydration",
+                                                color = if (selectedScreen == ScreenDestination.HYDRATION) Color.Black else Color.Black
+                                            )
+                                        },
+                                        selected = selectedScreen == ScreenDestination.HYDRATION,
+                                        onClick = { selectedScreen = ScreenDestination.HYDRATION },
+                                        colors = NavigationBarItemDefaults.colors(
+                                            indicatorColor = Color(0xFFBBDEFB), // light blue halo
+                                            selectedIconColor = Color(0xFF2196F3), // blue
+                                            unselectedIconColor = Color.Unspecified,
+                                            selectedTextColor = Color.Black,
+                                            unselectedTextColor = Color.Black
+                                        )
+                                    )
+
+                                    NavigationBarItem(
+                                        icon = {
+                                            Icon(
+                                                painter = painterResource(id = R.drawable.ic_meal),
+                                                contentDescription = "Meal",
+                                                tint = if (selectedScreen == ScreenDestination.MEAL_LOG) Color(0xFF2196F3) else Color.Unspecified
+                                            )
+                                        },
+                                        label = {
+                                            Text(
+                                                "Meal",
+                                                color = if (selectedScreen == ScreenDestination.MEAL_LOG) Color.Black else Color.Black
+                                            )
+                                        },
+                                        selected = selectedScreen == ScreenDestination.MEAL_LOG,
+                                        onClick = { selectedScreen = ScreenDestination.MEAL_LOG },
+                                        colors = NavigationBarItemDefaults.colors(
+                                            indicatorColor = Color(0xFFBBDEFB),
+                                            selectedIconColor = Color(0xFF2196F3),
+                                            unselectedIconColor = Color.Unspecified,
+                                            selectedTextColor = Color.Black,
+                                            unselectedTextColor = Color.Black
+                                        )
+                                    )
+
+                                    NavigationBarItem(
+                                        icon = {
+                                            Icon(
+                                                painter = painterResource(id = R.drawable.ic_analytics),
+                                                contentDescription = "Analytics",
+                                                tint = if (selectedScreen == ScreenDestination.ANALYTICS) Color(0xFF2196F3) else Color.Unspecified
+                                            )
+                                        },
+                                        label = {
+                                            Text(
+                                                "Analytics",
+                                                color = if (selectedScreen == ScreenDestination.ANALYTICS) Color.Black else Color.Black
+                                            )
+                                        },
+                                        selected = selectedScreen == ScreenDestination.ANALYTICS,
+                                        onClick = { selectedScreen = ScreenDestination.ANALYTICS },
+                                        colors = NavigationBarItemDefaults.colors(
+                                            indicatorColor = Color(0xFFBBDEFB),
+                                            selectedIconColor = Color(0xFF2196F3),
+                                            unselectedIconColor = Color.Unspecified,
+                                            selectedTextColor = Color.Black,
+                                            unselectedTextColor = Color.Black
+                                        )
+                                    )
+                                }
+                            }
                         }
                     }
+
                 ) { paddingValues ->
                     Box(modifier = Modifier
                         .fillMaxSize()
                         .padding(paddingValues)) {
-                        when (selectedTab) {
-                            BottomNavDestination.HYDRATION -> HydrationScreen(
+
+                        when (selectedScreen) {
+                            ScreenDestination.HYDRATION -> HydrationScreen(
                                 dataStore = dataStore,
                                 temperature = temperature,
                                 latestTemperature = latestTemperature,
                                 onCelebration = { showCelebration = true }
                             )
-                            BottomNavDestination.MEAL_LOG -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                                Text("🍽 Meal Logger Coming Soon")
+                            ScreenDestination.MEAL_LOG -> {
+                                Text("🍽 Meal Logging Coming Soon!", modifier = Modifier.align(Alignment.Center))
                             }
-                            BottomNavDestination.ANALYTICS -> Box(Modifier.fillMaxSize(), Alignment.Center) {
-                                Text("📊 Analytics Coming Soon")
+                            ScreenDestination.ANALYTICS -> {
+                                Text("📊 Analytics Dashboard Coming Soon!", modifier = Modifier.align(Alignment.Center))
                             }
                         }
+
                         if (showCelebration) {
                             CelebrationOverlay { showCelebration = false }
                         }
                     }
                 }
             }
-
         }
     }
 }
