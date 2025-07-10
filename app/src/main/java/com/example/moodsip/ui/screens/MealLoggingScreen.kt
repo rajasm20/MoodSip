@@ -2,9 +2,14 @@ package com.example.moodsip.ui.screens
 
 import android.os.Bundle
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
@@ -13,12 +18,15 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.moodsip.data.MealDataStoreManager
 import com.example.moodsip.data.MealEntry
 import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
+
 
 @Composable
 fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
@@ -41,98 +49,123 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
         }
     }
 
-    Column(modifier = Modifier
-        .fillMaxSize()
-        .padding(16.dp)) {
-
-        Text("Log a Meal", style = MaterialTheme.typography.headlineSmall)
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text("Meal Type")
-        DropdownMenuBox(items = listOf("Breakfast", "Lunch", "Dinner", "Snack"), selected = selectedMealType) {
-            selectedMealType = it
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text("Food Category")
-        DropdownMenuBox(items = listOf("Home-Cooked", "Junk Snacks", "Salads and Healthy Bowls", "Desserts and Sweets", "Fast Food & Take Out"), selected = selectedFoodCategory) {
-            selectedFoodCategory = it
-        }
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        OutlinedTextField(
-            value = mealName,
-            onValueChange = { mealName = it },
-            label = { Text("Meal Name") },
-            modifier = Modifier.fillMaxWidth()
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        Text("Mood Before Eating: ${moodBefore.toInt()}")
-        Slider(value = moodBefore, onValueChange = { moodBefore = it }, valueRange = 1f..5f, steps = 3)
-
-        Text("Mood After Eating: ${moodAfter.toInt()}")
-        Slider(value = moodAfter, onValueChange = { moodAfter = it }, valueRange = 1f..5f, steps = 3)
-
-        Text("Energy Before Eating: ${energyBefore.toInt()}")
-        Slider(value = energyBefore, onValueChange = { energyBefore = it }, valueRange = 1f..5f, steps = 3)
-
-        Text("Energy After Eating: ${energyAfter.toInt()}")
-        Slider(value = energyAfter, onValueChange = { energyAfter = it }, valueRange = 1f..5f, steps = 3)
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        Button(onClick = {
-            val entry = MealEntry(
-                date = today,
-                time = mealDataStoreManager.getCurrentTime(),
-                mealType = selectedMealType,
-                mealName = mealName,
-                foodCategory = selectedFoodCategory,
-                moodBefore = moodBefore.toInt(),
-                moodAfter = moodAfter.toInt(),
-                energyBefore = energyBefore.toInt(),
-                energyAfter = energyAfter.toInt()
-            )
-            scope.launch {
-                mealDataStoreManager.saveMeal(entry)
-                analytics.logEvent("meal_logged", Bundle().apply {
-                    putString("meal_type", selectedMealType)
-                    putString("category", selectedFoodCategory)
-                })
-                mealName = ""
-                moodBefore = 3f
-                moodAfter = 3f
-                energyBefore = 3f
-                energyAfter = 3f
-            }
-        }) {
-            Text("Log Meal")
-        }
-
-        Spacer(modifier = Modifier.height(24.dp))
-
-        Text("Today's Meals", style = MaterialTheme.typography.titleMedium)
-
-        LazyColumn(modifier = Modifier.weight(1f)) {
-            items(mealLog.value) { entry ->
-                Card(
+    LazyColumn(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        item {
+            Card(
+                shape = RoundedCornerShape(8.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    "Log a Meal",
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        color = Color(0xFFFF9800),
+                        fontSize = 18.sp
+                    ),
                     modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(vertical = 4.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color(0xFFE1F5FE))
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text("🍽 ${entry.mealType}: ${entry.mealName}", style = MaterialTheme.typography.bodyLarge)
-                        Text("📅 ${entry.date} ⏰ ${entry.time}", style = MaterialTheme.typography.bodySmall)
-                        Text("Category: ${entry.foodCategory}", style = MaterialTheme.typography.bodySmall)
-                        Text("Mood: ${entry.moodBefore} ➡ ${entry.moodAfter}", style = MaterialTheme.typography.bodySmall)
-                        Text("Energy: ${entry.energyBefore} ➡ ${entry.energyAfter}", style = MaterialTheme.typography.bodySmall)
+                        .align(Alignment.CenterHorizontally)
+                        .padding(vertical = 8.dp)
+                )
+            }
+        }
+
+        item {
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = Color.White),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    OrangeLabeledDropdown("Meal Type", listOf("Breakfast", "Lunch", "Dinner", "Snack"), selectedMealType) {
+                        selectedMealType = it
                     }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OrangeLabeledDropdown("Food Category", listOf("Home-Cooked", "Junk Snacks", "Salads and Healthy Bowls", "Desserts and Sweets", "Fast Food & Take Out"), selectedFoodCategory) {
+                        selectedFoodCategory = it
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = mealName,
+                        onValueChange = { mealName = it },
+                        label = { Text("Meal Name") },
+                        placeholder = { Text("Enter name") },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(0xFFFF9800),
+                            unfocusedBorderColor = Color(0xFFFF9800),
+                            focusedLabelColor = Color(0xFFFF9800)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .border(1.dp, Color(0xFFFF9800), shape = RoundedCornerShape(8.dp))
+                            .background(Color.White, RoundedCornerShape(8.dp))
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OrangeSlider("Mood Before Eating", moodBefore) { moodBefore = it }
+                    OrangeSlider("Mood After Eating", moodAfter) { moodAfter = it }
+                    OrangeSlider("Energy Before Eating", energyBefore) { energyBefore = it }
+                    OrangeSlider("Energy After Eating", energyAfter) { energyAfter = it }
+                }
+            }
+        }
+
+        item {
+            Button(onClick = {
+                val entry = MealEntry(
+                    date = today,
+                    time = mealDataStoreManager.getCurrentTime(),
+                    mealType = selectedMealType,
+                    mealName = mealName,
+                    foodCategory = selectedFoodCategory,
+                    moodBefore = moodBefore.toInt(),
+                    moodAfter = moodAfter.toInt(),
+                    energyBefore = energyBefore.toInt(),
+                    energyAfter = energyAfter.toInt()
+                )
+                scope.launch {
+                    mealDataStoreManager.saveMeal(entry)
+                    analytics.logEvent("meal_logged", Bundle().apply {
+                        putString("meal_type", selectedMealType)
+                        putString("category", selectedFoodCategory)
+                    })
+                    mealName = ""
+                    moodBefore = 3f
+                    moodAfter = 3f
+                    energyBefore = 3f
+                    energyAfter = 3f
+                }
+            }, modifier = Modifier.fillMaxWidth()) {
+                Text("Log Meal")
+            }
+        }
+
+        item {
+            Text("Today's Meals", style = MaterialTheme.typography.titleSmall)
+        }
+
+        items(mealLog.value) { entry ->
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 6.dp),
+                colors = CardDefaults.cardColors(containerColor = Color(0xFFE1F5FE))
+            ) {
+                Column(modifier = Modifier.padding(10.dp)) {
+                    Text("🍽 ${entry.mealType}: ${entry.mealName}", style = MaterialTheme.typography.bodyMedium)
+                    Text("📅 ${entry.date} ⏰ ${entry.time}", style = MaterialTheme.typography.bodySmall)
+                    Text("Category: ${entry.foodCategory}", style = MaterialTheme.typography.bodySmall)
+                    Text("Mood: ${entry.moodBefore} ➡ ${entry.moodAfter}", style = MaterialTheme.typography.bodySmall)
+                    Text("Energy: ${entry.energyBefore} ➡ ${entry.energyAfter}", style = MaterialTheme.typography.bodySmall)
                 }
             }
         }
@@ -140,32 +173,80 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
 }
 
 @Composable
-fun DropdownMenuBox(items: List<String>, selected: String, onSelected: (String) -> Unit) {
+fun OrangeSlider(label: String, value: Float, onValueChange: (Float) -> Unit) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Card(
+            shape = RoundedCornerShape(8.dp),
+            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFE0B2)),
+            modifier = Modifier.padding(vertical = 4.dp)
+        ) {
+            Text(
+                "$label: ${value.toInt()}",
+                modifier = Modifier.padding(8.dp),
+                color = Color.Black
+            )
+        }
+        Slider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = 1f..5f,
+            steps = 3,
+            colors = SliderDefaults.colors(
+                thumbColor = Color(0xFFFF9800),
+                activeTrackColor = Color(0xFFFF9800),
+                inactiveTrackColor = Color(0xFFFFCC80)
+            ),
+            modifier = Modifier.height(24.dp)
+        )
+    }
+}
+
+@Composable
+fun OrangeLabeledDropdown(
+    label: String,
+    items: List<String>,
+    selected: String,
+    onSelected: (String) -> Unit
+) {
     var expanded by remember { mutableStateOf(false) }
 
-    Box(modifier = Modifier.fillMaxWidth()) {
-        OutlinedTextField(
-            value = selected,
-            onValueChange = {},
-            readOnly = true,
-            modifier = Modifier.fillMaxWidth(),
-            label = { Text("Select") },
-            trailingIcon = {
-                IconButton(onClick = { expanded = true }) {
-                    Icon(Icons.Default.ArrowDropDown, contentDescription = null)
-                }
-            }
-        )
-        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .border(1.dp, Color(0xFFFF9800), shape = RoundedCornerShape(8.dp))
+            .background(Color.White, RoundedCornerShape(8.dp))
+            .clickable { expanded = true }
+            .padding(8.dp)
+    ) {
+        Text(label, color = Color(0xFFFF9800), fontWeight = FontWeight.Bold)
+        Text(selected, modifier = Modifier.fillMaxWidth(), fontSize = 14.sp)
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
+            modifier = Modifier
+                .background(Color.White)
+                .fillMaxWidth()
+        ) {
             items.forEach { item ->
                 DropdownMenuItem(
-                    text = { Text(item) },
+                    text = {
+                        Text(
+                            text = item.uppercase(),
+                            fontWeight = FontWeight.Bold,
+                            modifier = Modifier.fillMaxWidth(),
+                            color = Color.Black
+                        )
+                    },
                     onClick = {
                         onSelected(item)
                         expanded = false
                     }
                 )
+                Divider()
             }
         }
     }
 }
+
+
