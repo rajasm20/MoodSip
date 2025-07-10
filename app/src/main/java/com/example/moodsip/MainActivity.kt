@@ -17,10 +17,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.work.*
 import com.example.moodsip.data.DataStoreManager
+import com.example.moodsip.data.MealDataStoreManager
 import com.example.moodsip.network.WeatherService
-import com.example.moodsip.ui.screens.HydrationScreen
-import com.example.moodsip.ui.screens.ScreenDestination
-import com.example.moodsip.ui.screens.CelebrationOverlay
+import com.example.moodsip.ui.screens.*
 import com.example.moodsip.ui.theme.HydrationAppTheme
 import com.example.moodsip.worker.HydrationWorker
 import com.google.firebase.ktx.Firebase
@@ -34,11 +33,15 @@ import java.util.concurrent.TimeUnit
 class MainActivity : ComponentActivity() {
 
     private lateinit var dataStore: DataStoreManager
+    private lateinit var mealDataStore: MealDataStoreManager
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         dataStore = DataStoreManager(this)
+        mealDataStore = MealDataStoreManager(this)
+
         val remoteConfig = Firebase.remoteConfig
         var latestTemperature: Float? = null
 
@@ -115,14 +118,14 @@ class MainActivity : ComponentActivity() {
                                         label = {
                                             Text(
                                                 "Hydration",
-                                                color = if (selectedScreen == ScreenDestination.HYDRATION) Color.Black else Color.Black
+                                                color = Color.Black
                                             )
                                         },
                                         selected = selectedScreen == ScreenDestination.HYDRATION,
                                         onClick = { selectedScreen = ScreenDestination.HYDRATION },
                                         colors = NavigationBarItemDefaults.colors(
-                                            indicatorColor = Color(0xFFBBDEFB), // light blue halo
-                                            selectedIconColor = Color(0xFF2196F3), // blue
+                                            indicatorColor = Color(0xFFBBDEFB),
+                                            selectedIconColor = Color(0xFF2196F3),
                                             unselectedIconColor = Color.Unspecified,
                                             selectedTextColor = Color.Black,
                                             unselectedTextColor = Color.Black
@@ -140,7 +143,7 @@ class MainActivity : ComponentActivity() {
                                         label = {
                                             Text(
                                                 "Meal",
-                                                color = if (selectedScreen == ScreenDestination.MEAL_LOG) Color.Black else Color.Black
+                                                color = Color.Black
                                             )
                                         },
                                         selected = selectedScreen == ScreenDestination.MEAL_LOG,
@@ -165,7 +168,7 @@ class MainActivity : ComponentActivity() {
                                         label = {
                                             Text(
                                                 "Analytics",
-                                                color = if (selectedScreen == ScreenDestination.ANALYTICS) Color.Black else Color.Black
+                                                color = Color.Black
                                             )
                                         },
                                         selected = selectedScreen == ScreenDestination.ANALYTICS,
@@ -182,12 +185,12 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
-
                 ) { paddingValues ->
-                    Box(modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)) {
-
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(paddingValues)
+                    ) {
                         when (selectedScreen) {
                             ScreenDestination.HYDRATION -> HydrationScreen(
                                 dataStore = dataStore,
@@ -196,7 +199,7 @@ class MainActivity : ComponentActivity() {
                                 onCelebration = { showCelebration = true }
                             )
                             ScreenDestination.MEAL_LOG -> {
-                                Text("🍽 Meal Logging Coming Soon!", modifier = Modifier.align(Alignment.Center))
+                                MealLoggerScreen(mealDataStore)
                             }
                             ScreenDestination.ANALYTICS -> {
                                 Text("📊 Analytics Dashboard Coming Soon!", modifier = Modifier.align(Alignment.Center))
