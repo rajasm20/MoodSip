@@ -7,9 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material3.*
@@ -26,7 +24,6 @@ import com.example.moodsip.data.MealEntry
 import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.ktx.Firebase
 import kotlinx.coroutines.launch
-
 
 @Composable
 fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
@@ -52,24 +49,20 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
     LazyColumn(
         modifier = Modifier
             .fillMaxSize()
+            .background(Color(0xFFFF9800))
             .padding(12.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         item {
-            Card(
-                shape = RoundedCornerShape(8.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                modifier = Modifier.fillMaxWidth()
-            ) {
+            Box(modifier = Modifier.fillMaxWidth()) {
                 Text(
-                    "Log a Meal",
-                    style = MaterialTheme.typography.titleMedium.copy(
-                        color = Color(0xFFFF9800),
-                        fontSize = 18.sp
-                    ),
+                    "LOG A MEAL",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 20.sp,
                     modifier = Modifier
-                        .align(Alignment.CenterHorizontally)
-                        .padding(vertical = 8.dp)
+                        .align(Alignment.Center)
+                        .padding(8.dp)
                 )
             }
         }
@@ -174,32 +167,38 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
 
 @Composable
 fun OrangeSlider(label: String, value: Float, onValueChange: (Float) -> Unit) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Card(
-            shape = RoundedCornerShape(8.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFE0B2)),
-            modifier = Modifier.padding(vertical = 4.dp)
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        // Light orange background container
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(Color(0xFFFFF3E0), RoundedCornerShape(8.dp))
+                .padding(12.dp)
         ) {
-            Text(
-                "$label: ${value.toInt()}",
-                modifier = Modifier.padding(8.dp),
-                color = Color.Black
-            )
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(
+                    text = label,
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color(0xFF6D4C41)
+                )
+                Slider(
+                    value = value,
+                    onValueChange = onValueChange,
+                    valueRange = 1f..5f,
+                    steps = 3,
+                    colors = SliderDefaults.colors(
+                        thumbColor = Color(0xFFFF9800),
+                        activeTrackColor = Color(0xFFFF9800),
+                        inactiveTrackColor = Color(0xFFFFCC80)
+                    ),
+                    modifier = Modifier.height(24.dp)
+                )
+            }
         }
-        Slider(
-            value = value,
-            onValueChange = onValueChange,
-            valueRange = 1f..5f,
-            steps = 3,
-            colors = SliderDefaults.colors(
-                thumbColor = Color(0xFFFF9800),
-                activeTrackColor = Color(0xFFFF9800),
-                inactiveTrackColor = Color(0xFFFFCC80)
-            ),
-            modifier = Modifier.height(24.dp)
-        )
     }
 }
+
 
 @Composable
 fun OrangeLabeledDropdown(
@@ -248,5 +247,3 @@ fun OrangeLabeledDropdown(
         }
     }
 }
-
-
