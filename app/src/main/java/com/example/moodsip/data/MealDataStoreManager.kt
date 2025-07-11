@@ -8,6 +8,7 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.text.SimpleDateFormat
 import java.util.*
@@ -40,12 +41,21 @@ class MealDataStoreManager(private val context: Context) {
         }
     }
 
+    suspend fun getMealsForDateSync(date: String): List<MealEntry> {
+        val key = keyForDate(date)
+        val preferences = context.dataStore.data.first()
+        return preferences[key]?.let { json ->
+            val type = object : TypeToken<List<MealEntry>>() {}.type
+            gson.fromJson<List<MealEntry>>(json, type)
+        } ?: emptyList()
+    }
+
     suspend fun saveMeal(entry: MealEntry) {
         val key = keyForDate(entry.date)
         context.dataStore.edit { preferences ->
             val existingJson = preferences[key]
             val currentList = if (existingJson != null) {
-                val type = object : TypeToken<List<MealEntry>>() {}.type
+                val type = object : TypeToken<MutableList<MealEntry>>() {}.type
                 gson.fromJson<MutableList<MealEntry>>(existingJson, type)
             } else {
                 mutableListOf()
@@ -69,7 +79,6 @@ class MealDataStoreManager(private val context: Context) {
         }
     }
 
-
     fun getTodayDate(): String {
         return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
     }
@@ -77,10 +86,20 @@ class MealDataStoreManager(private val context: Context) {
     fun getCurrentTime(): String {
         return SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date())
     }
+
     fun getDateDaysAgo(daysAgo: Int): String {
         val calendar = Calendar.getInstance()
         calendar.add(Calendar.DATE, -daysAgo)
         return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(calendar.time)
     }
 
+    suspend fun getMealsForLastNDays(days: Int): Map<String, List<MealEntry>> {
+        val result = mutableMapOf<String, List<MealEntry>>()
+        for (i in 0 until days) {
+            val date = getDateDaysAgo(i)
+            val meals = getMealsForDateSync(date)
+            result[date] = meals
+        }
+        return result
+    }
 }

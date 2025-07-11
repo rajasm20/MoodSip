@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.work.*
+import com.example.moodsip.ui.screens.AnalyticsScreen
 import com.example.moodsip.data.DataStoreManager
 import com.example.moodsip.data.MealDataStoreManager
 import com.example.moodsip.network.WeatherService
@@ -202,7 +203,10 @@ class MainActivity : ComponentActivity() {
                                 MealLoggerScreen(mealDataStore)
                             }
                             ScreenDestination.ANALYTICS -> {
-                                Text("📊 Analytics Dashboard Coming Soon!", modifier = Modifier.align(Alignment.Center))
+                                AnalyticsScreen(
+                                    dataStore = dataStore,
+                                    mealDataStore = mealDataStore
+                                )
                             }
                         }
 

@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -50,6 +51,19 @@ class DataStoreManager(private val context: Context) {
             }.toMap()
         }
     }
+
+    suspend fun getHydrationGoal(date: String): Int {
+        val key = stringPreferencesKey("goal_$date")
+        val prefs = context.dataStore.data.first()
+        return prefs[key]?.toIntOrNull() ?: 8  // Default goal is 8 glasses
+    }
+
+    suspend fun getHydrationCount(date: String): Int {
+        val key = stringPreferencesKey("daily_$date")
+        val prefs = context.dataStore.data.first()
+        return prefs[key]?.toIntOrNull() ?: 0
+    }
+
 
     private fun logKeyForDate(date: String) = stringPreferencesKey("log_$date")
 
