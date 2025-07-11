@@ -67,7 +67,7 @@ class MainActivity : ComponentActivity() {
 
                     val service = retrofit.create(WeatherService::class.java)
                     val response = service.getWeather("London", "f7b60d5f4218e4937e14d28b42888bc5")
-                    val temp = response.main.temp
+                    val temp = 35f
                     temperature = temp
                     latestTemperature = temp
                 } catch (e: Exception) {

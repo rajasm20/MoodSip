@@ -1,6 +1,8 @@
 package com.example.moodsip.data
 
+import android.content.ContentValues.TAG
 import android.content.Context
+import android.util.Log
 import androidx.datastore.preferences.core.*
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -51,20 +53,6 @@ class DataStoreManager(private val context: Context) {
             }.toMap()
         }
     }
-
-    suspend fun getHydrationGoal(date: String): Int {
-        val key = stringPreferencesKey("goal_$date")
-        val prefs = context.dataStore.data.first()
-        return prefs[key]?.toIntOrNull() ?: 8  // Default goal is 8 glasses
-    }
-
-    suspend fun getHydrationCount(date: String): Int {
-        val key = stringPreferencesKey("daily_$date")
-        val prefs = context.dataStore.data.first()
-        return prefs[key]?.toIntOrNull() ?: 0
-    }
-
-
     private fun logKeyForDate(date: String) = stringPreferencesKey("log_$date")
 
     suspend fun saveLogEntry(date: String, time: String) {
@@ -95,7 +83,19 @@ class DataStoreManager(private val context: Context) {
             }
         }
     }
-    suspend fun clearAllData() {
-        context.dataStore.edit { it.clear() }
+
+    private fun goalKeyForDate(date: String) = stringPreferencesKey("goal_$date")
+
+    suspend fun saveDailyGoal(date: String, goal: Int) {
+        context.dataStore.edit { prefs ->
+            prefs[goalKeyForDate(date)] = goal.toString()
+        }
     }
+
+    fun getDailyGoal(date: String): Flow<Int?> {
+        return context.dataStore.data.map { prefs ->
+            prefs[goalKeyForDate(date)]?.toIntOrNull()
+        }
+    }
+
 }

@@ -1,137 +1,182 @@
 package com.example.moodsip.ui.screens
 
+import android.widget.Toast
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.moodsip.data.DataStoreManager
 import com.example.moodsip.data.MealDataStoreManager
 import com.example.moodsip.data.MealEntry
-import kotlinx.coroutines.launch
+import com.maxkeppeker.sheets.core.models.base.rememberUseCaseState
+import com.maxkeppeler.sheets.calendar.CalendarDialog
+import com.maxkeppeler.sheets.calendar.models.CalendarConfig
+import com.maxkeppeler.sheets.calendar.models.CalendarSelection
+import kotlinx.coroutines.flow.first
 import java.text.SimpleDateFormat
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 import java.util.*
 
-data class HydrationStat(val date: String, val goal: Int, val consumed: Int)
-data class MoodEnergyStat(val date: String, val mood: Float, val energy: Float)
-
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AnalyticsScreen(
     dataStore: DataStoreManager,
-    mealDataStore: MealDataStoreManager
+    mealDataStore: MealDataStoreManager,
+    temperature: Float? = null
 ) {
-    val scope = rememberCoroutineScope()
-    var hydrationStats by remember { mutableStateOf<List<HydrationStat>>(emptyList()) }
-    var moodEnergyStats by remember { mutableStateOf<List<MoodEnergyStat>>(emptyList()) }
-    var mealLogs by remember { mutableStateOf<Map<String, List<MealEntry>>>(emptyMap()) }
-    var loading by remember { mutableStateOf(true) }
+    val context = LocalContext.current
+    val scrollState = rememberScrollState()
 
-    LaunchedEffect(Unit) {
-        scope.launch {
-            val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
-            val last5Days = (0L..4L).map {
-                val calendar = Calendar.getInstance().apply { add(Calendar.DATE, -it.toInt()) }
-                formatter.format(calendar.time)
-            }.reversed()
+    val today = remember { LocalDate.now() }
+    var selectedDate by remember { mutableStateOf(today) }
+    var mealLog by remember { mutableStateOf<List<MealEntry>>(emptyList()) }
+    var hydrationCount by remember { mutableStateOf(0) }
+    var hydrationGoal by remember { mutableStateOf(8) }
+    val calendarState = rememberUseCaseState()
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
-            val hydration = last5Days.map { date ->
-                val goal = dataStore.getHydrationGoal(date)
-                val actual = dataStore.getHydrationCount(date)
-                HydrationStat(date, goal, actual)
-            }
+    CalendarDialog(
+        state = calendarState,
+        selection = CalendarSelection.Date { date ->
+            selectedDate = date
+        },
+        config = CalendarConfig(
+            monthSelection = true,
+            yearSelection = true,
+            boundary = LocalDate.MIN..LocalDate.now()
+        )
+    )
 
-            val allMeals = mutableMapOf<String, List<MealEntry>>()
-            val moodEnergy = mutableListOf<MoodEnergyStat>()
+    val startOfWeek = today.minusDays(today.dayOfWeek.value % 7L)
+    val weekDates = (0..6).map { startOfWeek.plusDays(it.toLong()) }
+    val formatterDay = DateTimeFormatter.ofPattern("E")
+    val formatterDate = DateTimeFormatter.ofPattern("d")
+    val fullDateFormatter = DateTimeFormatter.ofPattern("d MMMM yyyy")
 
-            for (date in last5Days) {
-                val meals = mealDataStore.getMealsForDateSync(date)
-                allMeals[date] = meals
+    LaunchedEffect(selectedDate) {
+        val selectedDateStr = selectedDate.format(formatter)
+        val allLogs = dataStore.getAllLogs().first()
+        hydrationCount = allLogs[selectedDateStr] ?: 0
 
-                if (meals.isNotEmpty()) {
-                    val mood = meals.map { (it.moodBefore + it.moodAfter) / 2f }.average().toFloat()
-                    val energy = meals.map { (it.energyBefore + it.energyAfter) / 2f }.average().toFloat()
-                    moodEnergy.add(MoodEnergyStat(date, mood, energy))
-                } else {
-                    moodEnergy.add(MoodEnergyStat(date, 0f, 0f))
-                }
-            }
+        mealLog = mealDataStore.getMealsForDate(selectedDateStr).first()
 
-            hydrationStats = hydration
-            moodEnergyStats = moodEnergy
-            mealLogs = allMeals
-            loading = false
+        dataStore.getDailyGoal(selectedDateStr).collect { savedGoal ->
+            hydrationGoal = savedGoal ?: 8
         }
     }
 
-    if (loading) {
-        Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-            CircularProgressIndicator(color = Color(0xFFFF9800))
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .verticalScroll(scrollState)
+            .padding(horizontal = 12.dp, vertical = 4.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 6.dp),
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = if (selectedDate == today) "Today" else selectedDate.format(fullDateFormatter),
+                modifier = Modifier.clickable { calendarState.show() },
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold
+            )
         }
-    } else {
-        LazyColumn(modifier = Modifier.fillMaxSize().background(Color(0xFFFFF3E0)).padding(12.dp)) {
 
-            item {
-                Text("📅 Daily Overview", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6D4C41))
-                Spacer(modifier = Modifier.height(8.dp))
-            }
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 8.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            weekDates.forEach { date ->
+                val isToday = date == today
+                val isSelected = date == selectedDate
+                val isFuture = date.isAfter(today)
 
-            items(hydrationStats) { stat ->
-                Card(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    shape = RoundedCornerShape(12.dp)
+                val bgColor = when {
+                    isSelected -> Color(0xFFBBDEFB)
+                    isFuture -> Color.LightGray
+                    else -> Color.Transparent
+                }
+
+                val textColor = if (isFuture) Color.Gray else Color.Black
+
+                Column(
+                    modifier = Modifier
+                        .width(48.dp)
+                        .height(64.dp)
+                        .background(color = bgColor, shape = RoundedCornerShape(50))
+                        .border(
+                            border = BorderStroke(2.dp, Color(0xFF1976D2)),
+                            shape = RoundedCornerShape(50)
+                        )
+                        .clickable(enabled = !isFuture) { selectedDate = date },
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text("Date: ${stat.date}", fontWeight = FontWeight.Bold)
-                        Text("Hydration Goal: ${stat.goal} glasses")
-                        Text("Consumed: ${stat.consumed} glasses")
+                    Text(
+                        text = date.format(formatterDay).first().toString(),
+                        fontSize = 12.sp,
+                        color = textColor
+                    )
+                    Text(
+                        text = date.format(formatterDate),
+                        fontWeight = FontWeight.Bold,
+                        color = textColor
+                    )
+                }
+            }
+        }
 
-                        val meals = mealLogs[stat.date] ?: emptyList()
-                        if (meals.isNotEmpty()) {
-                            Spacer(modifier = Modifier.height(6.dp))
-                            Text("🍽 Meals:", fontWeight = FontWeight.Bold)
-                            meals.forEach {
-                                Text("- ${it.mealType}: ${it.mealName} (${it.foodCategory})")
-                            }
-                        } else {
-                            Text("No meals logged.")
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 8.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White),
+            elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text("Selected Date: ${selectedDate.format(fullDateFormatter)}", fontWeight = FontWeight.Bold)
+                Spacer(modifier = Modifier.height(8.dp))
+                Text("Hydration Goal: $hydrationGoal glasses")
+                Text("Glasses Drunk: $hydrationCount")
+                Spacer(modifier = Modifier.height(12.dp))
+                if (mealLog.isEmpty()) {
+                    Text("No meals logged on this day.", color = Color.Gray)
+                } else {
+                    Text("Meal Log:", fontWeight = FontWeight.SemiBold)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    mealLog.forEach { entry ->
+                        Column(modifier = Modifier.padding(bottom = 8.dp)) {
+                            Text("🍽 ${entry.mealType} - ${entry.mealName} at ${entry.time}")
+                            Text("Category: ${entry.foodCategory}")
+                            Text(
+                                "Mood: ${entry.moodBefore} ➔ ${entry.moodAfter} | Energy: ${entry.energyBefore} ➔ ${entry.energyAfter}",
+                                fontSize = 12.sp
+                            )
                         }
                     }
                 }
             }
-
-            item {
-                Spacer(modifier = Modifier.height(12.dp))
-                Text("📈 Mood & Energy Trends (Last 5 Days)", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6D4C41))
-                Spacer(modifier = Modifier.height(8.dp))
-            }
-
-            items(moodEnergyStats) { stat ->
-                Card(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text("Date: ${stat.date}", fontWeight = FontWeight.Bold)
-                        Text("Avg Mood: ${stat.mood}")
-                        Text("Avg Energy: ${stat.energy}")
-                    }
-                }
-            }
-
-            item {
-                Spacer(modifier = Modifier.height(16.dp))
-                Text("🔥 Streak Tracker Coming Soon!", fontSize = 16.sp, fontWeight = FontWeight.Bold, color = Color.Gray)
-            }
         }
+
+        Spacer(modifier = Modifier.height(80.dp)) // space for future charts
     }
 }

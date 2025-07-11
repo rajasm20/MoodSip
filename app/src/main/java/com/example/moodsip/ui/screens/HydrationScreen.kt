@@ -57,12 +57,23 @@ fun HydrationScreen(
         }
     }
 
-    temperature?.let {
-        val baseGoal = 8
-        val tempAdjustment = ((it - 25) / 5).toInt().coerceAtLeast(0)
-        hydrationGoal = baseGoal + tempAdjustment
-        if (hydrationGoal >= 10) NotificationHelper.showHotWeatherNotification(context)
+    val todayDate = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+
+    LaunchedEffect(temperature) {
+        temperature?.let {
+            val baseGoal = 8
+            val tempAdjustment = ((it - 25) / 5).toInt().coerceAtLeast(0)
+            hydrationGoal = baseGoal + tempAdjustment
+
+            // Save the goal for today's date
+            dataStore.saveDailyGoal(todayDate, hydrationGoal)
+
+            if (hydrationGoal >= 10) {
+                NotificationHelper.showHotWeatherNotification(context)
+            }
+        }
     }
+
 
     Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFE0F7FA)) {
         Column(
@@ -91,6 +102,7 @@ fun HydrationScreen(
                     }
                 }
             }
+
 
 
             Row(
