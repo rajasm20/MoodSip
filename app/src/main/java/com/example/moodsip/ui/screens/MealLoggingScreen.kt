@@ -40,10 +40,10 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
     var showMealTypeDialog by remember { mutableStateOf(false) }
     var showFoodCategoryDialog by remember { mutableStateOf(false) }
     var mealName by remember { mutableStateOf("") }
-    var moodBefore by remember { mutableStateOf(3f) }
-    var moodAfter by remember { mutableStateOf(3f) }
-    var energyBefore by remember { mutableStateOf(3f) }
-    var energyAfter by remember { mutableStateOf(3f) }
+    var moodBefore by remember { mutableStateOf(1f) }
+    var moodAfter by remember { mutableStateOf(1f) }
+    var energyBefore by remember { mutableStateOf(1f) }
+    var energyAfter by remember { mutableStateOf(1f) }
     val today = mealDataStoreManager.getTodayDate()
 
     val mealLog by mealDataStoreManager.getMealsForDate(today).collectAsState(initial = emptyList())
@@ -78,18 +78,20 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
                         )
                     }
 
-                    IconButton(
-                        onClick = { showInsights = true },
-                        modifier = Modifier
-                            .size(36.dp)
-                            .background(Color.White, shape = RoundedCornerShape(18.dp))
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Lightbulb,
-                            contentDescription = "Insights",
-                            tint = Color(0xFFFFEB3B), // Yellow bulb
-                            modifier = Modifier.size(20.dp)
-                        )
+                    Box(modifier = Modifier.padding(end = 6.dp)) {
+                        IconButton(
+                            onClick = { showInsights = true },
+                            modifier = Modifier
+                                .size(36.dp)
+                                .background(Color.White, shape = RoundedCornerShape(18.dp))
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Lightbulb,
+                                contentDescription = "Insights",
+                                tint = Color(0xFFFFEB3B),
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
             }
@@ -98,9 +100,10 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
             item {
                 Card(shape = RoundedCornerShape(16.dp), colors = CardDefaults.cardColors(containerColor = Color.White), modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(12.dp)) {
-                        SelectorCard("Meal Type", selectedMealType, Icons.Default.BreakfastDining) { showMealTypeDialog = true }
+                        SelectorCard("Meal Type", selectedMealType, Icons.Default.LocalCafe) { showMealTypeDialog = true }
                         Spacer(modifier = Modifier.height(12.dp))
                         SelectorCard("Food Category", selectedFoodCategory, Icons.Default.Fastfood) { showFoodCategoryDialog = true }
+                        Spacer(modifier = Modifier.height(12.dp))
                         OutlinedTextField(
                             value = mealName,
                             onValueChange = { mealName = it },
@@ -112,15 +115,20 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
                             ),
                             modifier = Modifier.fillMaxWidth()
                         )
+                        Spacer(modifier = Modifier.height(12.dp))
                         OrangeSlider("Mood Before Eating", moodBefore) { moodBefore = it }
+                        Spacer(modifier = Modifier.height(12.dp))
                         OrangeSlider("Mood After Eating", moodAfter) { moodAfter = it }
+                        Spacer(modifier = Modifier.height(12.dp))
                         OrangeSlider("Energy Before Eating", energyBefore) { energyBefore = it }
+                        Spacer(modifier = Modifier.height(12.dp))
                         OrangeSlider("Energy After Eating", energyAfter) { energyAfter = it }
                     }
                 }
             }
 
             item {
+                Spacer(modifier = Modifier.height(12.dp))
                 Button(
                     onClick = {
                         val entry = MealEntry(today, mealDataStoreManager.getCurrentTime(), selectedMealType, mealName, selectedFoodCategory, moodBefore.toInt(), moodAfter.toInt(), energyBefore.toInt(), energyAfter.toInt())
@@ -196,11 +204,8 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
             }
         }
     }
-
     if (showMealTypeDialog) {
-        SelectionDialog(
-            title = "Select Meal Type",
-            options = listOf("Breakfast", "Lunch", "Dinner", "Snack"),
+        MealTypeDialog(
             onSelect = {
                 selectedMealType = it
                 showMealTypeDialog = false
@@ -208,10 +213,9 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
             onDismiss = { showMealTypeDialog = false }
         )
     }
+
     if (showFoodCategoryDialog) {
-        SelectionDialog(
-            title = "Select Food Category",
-            options = listOf("Home-Cooked", "Junk Snacks", "Salads and Healthy Bowls", "Desserts and Sweets", "Fast Food & Take Out"),
+        FoodCategoryDialog(
             onSelect = {
                 selectedFoodCategory = it
                 showFoodCategoryDialog = false
@@ -257,26 +261,6 @@ fun SelectorCard(label: String, selected: String, icon: ImageVector, onClick: ()
 }
 
 @Composable
-fun SelectionDialog(title: String, options: List<String>, onSelect: (String) -> Unit, onDismiss: () -> Unit) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = { Text(title, fontWeight = FontWeight.Bold) },
-        confirmButton = {},
-        text = {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                options.chunked(3).forEach { rowItems ->
-                    Row(horizontalArrangement = Arrangement.SpaceEvenly, modifier = Modifier.fillMaxWidth().padding(vertical = 6.dp)) {
-                        rowItems.forEach { item ->
-                            AssistChip(onClick = { onSelect(item) }, label = { Text(item) }, shape = RoundedCornerShape(10.dp))
-                        }
-                    }
-                }
-            }
-        }
-    )
-}
-
-@Composable
 fun OrangeSlider(label: String, value: Float, onValueChange: (Float) -> Unit) {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Box(
@@ -302,4 +286,78 @@ fun OrangeSlider(label: String, value: Float, onValueChange: (Float) -> Unit) {
             }
         }
     }
+}
+
+@Composable
+fun IconSelectorGrid(
+    title: String,
+    options: List<Pair<String, ImageVector>>,
+    onSelect: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        containerColor = Color(0xFFFFCC80),
+        title = { Text(title,
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF6D4C41),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp)
+                .wrapContentWidth(Alignment.CenterHorizontally)) },
+        confirmButton = {},
+        text = {
+            Column(modifier = Modifier.fillMaxWidth()) {
+                options.chunked(3).forEach { rowItems ->
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        rowItems.forEach { (label, icon) ->
+                            Box(
+                                modifier = Modifier
+                                    .size(80.dp)
+                                    .background(Color.White, RoundedCornerShape(12.dp))
+                                    .border(1.dp, Color(0xFFFF9800), RoundedCornerShape(12.dp))
+                                    .clickable { onSelect(label) },
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                                    Icon(icon, contentDescription = label, tint = Color(0xFFFF9800), modifier = Modifier.size(32.dp))
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(label, fontSize = 10.sp, color = Color.Black)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    )
+}
+
+@Composable
+fun MealTypeDialog(onSelect: (String) -> Unit, onDismiss: () -> Unit) {
+    val mealTypes = listOf(
+        "Breakfast" to Icons.Default.LocalCafe,
+        "Snack" to Icons.Default.LocalPizza,
+        "Lunch" to Icons.Default.Restaurant,
+        "Dinner" to Icons.Default.DinnerDining
+    )
+    IconSelectorGrid("SELECT MEAL TYPE", mealTypes, onSelect, onDismiss)
+}
+
+@Composable
+fun FoodCategoryDialog(onSelect: (String) -> Unit, onDismiss: () -> Unit) {
+    val categories = listOf(
+        "Home-Cooked" to Icons.Default.Home,
+        "Junk Snacks" to Icons.Default.LocalPizza,
+        "Salads" to Icons.Default.Restaurant,
+        "Desserts" to Icons.Default.Icecream,
+        "Fast Food" to Icons.Default.Fastfood
+    )
+    IconSelectorGrid("SELECT CATEGORY", categories, onSelect, onDismiss)
 }
