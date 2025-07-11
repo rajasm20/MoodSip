@@ -142,14 +142,15 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
                         }
                     },
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF9800))
+                    colors = ButtonDefaults.buttonColors(containerColor = Color.White)
                 ) {
-                    Text("LOG MEAL", fontSize = 18.sp, fontWeight = FontWeight.Bold, color = Color.White)
+                    Text("Log Meal", fontSize = 14.sp, fontWeight = FontWeight.Bold, color = Color(0xFF6D4C41))
                 }
             }
 
             item {
-                Text("Today's Meals", style = MaterialTheme.typography.titleSmall, modifier = Modifier.padding(vertical = 8.dp))
+                Spacer(modifier = Modifier.height(22.dp))
+                Text("Today you had...",fontSize = 40.sp, fontWeight = FontWeight.Bold, color = Color(0xFFFF9800) , modifier = Modifier.padding(vertical = 8.dp))
             }
 
             items(mealLog, key = { it.time + it.mealName }) { entry ->
@@ -167,13 +168,16 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
                         }
                     }
                 }) {
-                    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), colors = CardDefaults.cardColors(containerColor = Color(0xFFE1F5FE))) {
+                    Card(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp), colors = CardDefaults.cardColors(containerColor = Color(
+                        0xFFFFCC80
+                    )
+                    )) {
                         Column(Modifier.padding(10.dp)) {
-                            Text("🍽 ${entry.mealType}: ${entry.mealName}", style = MaterialTheme.typography.bodyMedium)
-                            Text("📅 ${entry.date} ➔ ${entry.time}", style = MaterialTheme.typography.bodySmall)
-                            Text("Category: ${entry.foodCategory}", style = MaterialTheme.typography.bodySmall)
-                            Text("Mood: ${entry.moodBefore} ➔ ${entry.moodAfter}", style = MaterialTheme.typography.bodySmall)
-                            Text("Energy: ${entry.energyBefore} ➔ ${entry.energyAfter}", style = MaterialTheme.typography.bodySmall)
+                            Text("🍽 ${entry.mealType}: ${entry.mealName}", style = MaterialTheme.typography.bodyMedium , color = Color(0xFF6D4C41))
+                            Text("📅 ${entry.date} ➔ ${entry.time}", style = MaterialTheme.typography.bodySmall , color = Color(0xFF6D4C41))
+                            Text("Category: ${entry.foodCategory}", style = MaterialTheme.typography.bodySmall , color = Color(0xFF6D4C41))
+                            Text("Mood: ${entry.moodBefore} ➔ ${entry.moodAfter}", style = MaterialTheme.typography.bodySmall , color = Color(0xFF6D4C41))
+                            Text("Energy: ${entry.energyBefore} ➔ ${entry.energyAfter}", style = MaterialTheme.typography.bodySmall , color = Color(0xFF6D4C41))
                         }
                     }
                 }
