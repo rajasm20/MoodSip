@@ -27,7 +27,6 @@ data class MealEntry(
 
 class MealDataStoreManager(val context: Context) {
     private val Context.dataStore by preferencesDataStore(name = "meal_logs")
-    val mealDataStore get() = this.context.dataStore
 
     private val gson = Gson()
 

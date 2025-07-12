@@ -40,7 +40,7 @@ import java.io.InputStreamReader
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
-    DebugMealDataStore(mealDataStoreManager)
+
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val analytics = Firebase.analytics
@@ -375,61 +375,5 @@ fun FoodCategoryDialog(onSelect: (String) -> Unit, onDismiss: () -> Unit) {
     )
     IconSelectorGrid("SELECT CATEGORY", categories, onSelect, onDismiss)
 }
-@Composable
-fun DebugMealDataStore(mealDataStoreManager: MealDataStoreManager) {
-    LaunchedEffect(Unit) {
-        mealDataStoreManager.mealDataStore.data.first().asMap().forEach {
-            Log.d("MEAL_KEYS", "${it.key.name} = ${it.value}")
-        }
-    }
-}
 
-@Composable
-fun InjectCSVToDataStore(
-    context: Context,
-    store: androidx.datastore.core.DataStore<Preferences>,
-    csvAssetFileName: String // e.g., "meal_logs_key_value.csv"
-) {
-    LaunchedEffect(true) {
-        try {
-            val assetManager = context.assets
-            val inputStream = assetManager.open(csvAssetFileName)
-            val reader = BufferedReader(InputStreamReader(inputStream))
-
-            val lines = reader.readLines()
-            Log.d("CSV_INJECTORlines", "$lines")
-            if (lines.isEmpty()) {
-                Log.d("CSV_INJECTOR", "CSV is empty.")
-                return@LaunchedEffect
-            }
-
-            val parts = lines[1]
-                .split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)".toRegex())
-                .map { it.trim().removeSurrounding("\"").replace("\"\"", "\"") }
-            Log.d("CSV_INJECTORlines1", "$lines[1]")
-            Log.d("CSV_INJECTORparts", "$parts")
-
-            store.edit { preferences ->
-                for (line in lines.drop(1)) {
-                    val parts = line
-                        .split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)".toRegex())
-                        .map { it.trim().removeSurrounding("\"").replace("\"\"", "\"") }
-
-                    if (parts.size >= 2) {
-                        val key = parts[0]
-                        val value = parts[1]
-                        preferences[stringPreferencesKey(key)] = value
-                        Log.d("CSV_INJECTORkey", key)
-                        Log.d("CSV_INJECTORvalue", value)
-                    }
-                }
-            }
-
-
-            Log.d("CSV_INJECTOR", "Injection from $csvAssetFileName successful.")
-        } catch (e: Exception) {
-            Log.e("CSV_INJECTOR", "Error injecting data from CSV", e)
-        }
-    }
-}
 
