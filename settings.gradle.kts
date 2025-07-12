@@ -1,5 +1,6 @@
 pluginManagement {
     repositories {
+
         google {
             content {
                 includeGroupByRegex("com\\.android.*")
@@ -19,7 +20,9 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven( url = "https://jitpack.io" )
     }
+
 }
 rootProject.name = "MoodSip"
 include(":app")

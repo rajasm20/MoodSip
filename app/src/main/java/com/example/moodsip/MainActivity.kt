@@ -1,5 +1,6 @@
 package com.example.moodsip
 
+import com.example.moodsip.ui.screens.AnalyticsScreen
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -16,7 +17,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.work.*
-import com.example.moodsip.ui.screens.AnalyticsScreen
 import com.example.moodsip.data.DataStoreManager
 import com.example.moodsip.data.MealDataStoreManager
 import com.example.moodsip.network.WeatherService
