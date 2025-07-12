@@ -1,10 +1,10 @@
 package com.example.moodsip.data
-
 import android.content.Context
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import com.example.moodsip.data.dataStore
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import kotlinx.coroutines.flow.Flow
@@ -25,8 +25,10 @@ data class MealEntry(
     val energyAfter: Int
 )
 
-class MealDataStoreManager(private val context: Context) {
+class MealDataStoreManager(val context: Context) {
     private val Context.dataStore by preferencesDataStore(name = "meal_logs")
+    val mealDataStore get() = this.context.dataStore
+
     private val gson = Gson()
 
     private fun keyForDate(date: String) = stringPreferencesKey("meal_logs_$date")
@@ -102,4 +104,7 @@ class MealDataStoreManager(private val context: Context) {
         }
         return result
     }
+
 }
+
+
