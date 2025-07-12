@@ -237,17 +237,10 @@ fun AnalyticsScreen(
                     }
                 }
             }
-            Spacer(modifier = Modifier.height(16.dp))
-
-            AnalyticsCharts(chartType = "Hydration", dataStore = dataStore, mealDataStore = mealDataStore)
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            AnalyticsCharts(chartType = "Mood", dataStore = dataStore, mealDataStore = mealDataStore)
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            AnalyticsCharts(chartType = "Energy", dataStore = dataStore, mealDataStore = mealDataStore)
+            AnalyticsCharts(
+                dataStore = dataStore,
+                mealDataStore = mealDataStore
+            )
         }
     }
 }
@@ -311,7 +304,7 @@ fun LineChartFixed(
 
             val markerColor = when (title) {
                 "Mood" -> "#F48FB1"
-                "Energy" -> "#FFD54F"
+                "Energy" -> "#fae8af"
                 else -> "#1976D2"
             }
             val marker = ChartMarkerView(context, labels, title, markerColor)
@@ -329,11 +322,12 @@ fun LineChartFixed(
 
 @Composable
 fun AnalyticsCharts(
-    chartType: String,
     dataStore: DataStoreManager,
     mealDataStore: MealDataStoreManager
 ) {
+    var selectedChartType by remember { mutableStateOf("Hydration") }
     var selectedRange by remember { mutableStateOf(7) }
+    var expanded by remember { mutableStateOf(false) }
 
     val today = LocalDate.now()
     val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
@@ -342,13 +336,20 @@ fun AnalyticsCharts(
     val entries = remember { mutableStateListOf<Entry>() }
     val labels = remember { mutableStateListOf<String>() }
 
-    LaunchedEffect(chartType, selectedRange) {
+    val chartEmoji = when (selectedChartType) {
+        "Hydration" -> "\uD83D\uDCCA"
+        "Mood" -> "\uD83D\uDE0A"
+        "Energy" -> "\u26A1"
+        else -> ""
+    }
+
+    LaunchedEffect(selectedChartType, selectedRange) {
         try {
             entries.clear()
             labels.clear()
 
             val allHydrationLogs = dataStore.getAllLogs().first()
-            val allMealLogs = if (chartType != "Hydration")
+            val allMealLogs = if (selectedChartType != "Hydration")
                 mealDataStore.getMealsForLastNDays(selectedRange)
             else emptyMap()
 
@@ -357,7 +358,7 @@ fun AnalyticsCharts(
                 val dateStr = date.format(dateFormatter)
                 val label = date.format(labelFormatter)
 
-                val rawValue: Float = when (chartType) {
+                val rawValue: Float = when (selectedChartType) {
                     "Hydration" -> allHydrationLogs[dateStr]?.toFloat() ?: 0f
                     "Mood" -> {
                         val meals = allMealLogs[dateStr] ?: emptyList()
@@ -391,58 +392,104 @@ fun AnalyticsCharts(
         }
     }
 
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Text(
-                text = when (chartType) {
-                    "Hydration" -> "\uD83D\uDCCA Hydration"
-                    "Mood" -> "\uD83D\uDE0A Mood"
-                    "Energy" -> "\u26A1 Energy"
-                    else -> chartType
-                },
-                fontWeight = FontWeight.Bold,
-                fontSize = 16.sp
-            )
+    // 🔲 Wrap chart section in Card
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
 
-            Row {
-                listOf(7 to "1W", 14 to "2W", 28 to "4W").forEach { (days, label) ->
-                    val selected = selectedRange == days
-                    Text(
-                        text = label,
-                        modifier = Modifier
-                            .padding(start = 6.dp)
-                            .clickable { selectedRange = days }
-                            .background(
-                                color = if (selected) Color(0xFF1976D2) else Color.White,
-                                shape = RoundedCornerShape(50)
+            // 📉 Title as Dropdown Row with arrow
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Box(modifier = Modifier.clickable { expanded = true }) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "$chartEmoji $selectedChartType",
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp,
+                            modifier = Modifier.padding(end = 4.dp)
+                        )
+                        Text(
+                            text = "▼", // dropdown arrow
+                            fontSize = 14.sp,
+                            color = Color.Gray
+                        )
+                    }
+
+                    DropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false }
+                    ) {
+                        listOf("Hydration", "Mood", "Energy").forEach { option ->
+                            val emoji = when (option) {
+                                "Hydration" -> "\uD83D\uDCCA"
+                                "Mood" -> "\uD83D\uDE0A"
+                                "Energy" -> "\u26A1"
+                                else -> ""
+                            }
+
+                            DropdownMenuItem(
+                                text = { Text("$emoji $option") },
+                                onClick = {
+                                    selectedChartType = option
+                                    expanded = false
+                                }
                             )
-                            .border(
-                                width = 1.dp,
-                                color = if (selected) Color(0xFF1976D2) else Color.LightGray,
-                                shape = RoundedCornerShape(50)
-                            )
-                            .padding(horizontal = 10.dp, vertical = 2.dp),
-                        color = if (selected) Color.White else Color.Black,
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium
-                    )
+                        }
+                    }
+                }
+
+                // 📆 Range Selector Buttons
+                Row {
+                    listOf(7 to "1W", 14 to "2W", 28 to "4W").forEach { (days, label) ->
+                        val selected = selectedRange == days
+                        Text(
+                            text = label,
+                            modifier = Modifier
+                                .padding(start = 6.dp)
+                                .clickable { selectedRange = days }
+                                .background(
+                                    color = if (selected) Color(0xFF1976D2) else Color.White,
+                                    shape = RoundedCornerShape(50)
+                                )
+                                .border(
+                                    width = 1.dp,
+                                    color = if (selected) Color(0xFF1976D2) else Color.LightGray,
+                                    shape = RoundedCornerShape(50)
+                                )
+                                .padding(horizontal = 10.dp, vertical = 2.dp),
+                            color = if (selected) Color.White else Color.Black,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                    }
                 }
             }
-        }
 
-        Spacer(modifier = Modifier.height(8.dp))
-        LineChartFixed(
-            title = chartType,
-            entries = entries,
-            labels = labels,
-            selectedRange = selectedRange
-        )
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 📊 Chart itself
+            LineChartFixed(
+                title = selectedChartType,
+                entries = entries,
+                labels = labels,
+                selectedRange = selectedRange
+            )
+        }
     }
 }
+
+
 
 
 
