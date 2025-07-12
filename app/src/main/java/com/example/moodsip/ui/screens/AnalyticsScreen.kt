@@ -240,6 +240,11 @@ fun AnalyticsScreen(
                 dataStore = dataStore,
                 mealDataStore = mealDataStore
             )
+            StreakCardSection(
+                dataStore = dataStore,
+                mealDataStore = mealDataStore
+            )
+
         }
     }
 }
@@ -487,6 +492,135 @@ fun AnalyticsCharts(
         }
     }
 }
+
+@Composable
+fun StreakCardSection(
+    dataStore: DataStoreManager,
+    mealDataStore: MealDataStoreManager
+) {
+    var selectedIcon by remember { mutableStateOf(0) } // 0 = hydration, 1 = meal, 2 = insights
+    val today = LocalDate.now()
+    val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
+
+    var hydrationStreak by remember { mutableStateOf(0) }
+    var mealStreak by remember { mutableStateOf(0) }
+
+    // Fetch streaks
+    LaunchedEffect(Unit) {
+        // Hydration streak (goal met for consecutive days)
+        val hydrationLogs = dataStore.getAllLogs().first()
+        val hydrationStreakCount = (0..30).takeWhile { offset ->
+            val date = today.minusDays(offset.toLong()).format(formatter)
+            val count = hydrationLogs[date] ?: 0
+            val goal = dataStore.getDailyGoal(date).first() ?: 8
+            count >= goal
+        }.count()
+        hydrationStreak = hydrationStreakCount
+
+        // Meal streak (must log all 4: B, L, S, D)
+        val mealStreakCount = (0..30).takeWhile { offset ->
+            val date = today.minusDays(offset.toLong()).format(formatter)
+            val meals = mealDataStore.getMealsForDateSync(date)
+            val typesLogged = meals.map { it.mealType }.distinct()
+            listOf("Breakfast", "Lunch", "Snack", "Dinner").all { it in typesLogged }
+        }.count()
+        mealStreak = mealStreakCount
+    }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 12.dp),
+        colors = CardDefaults.cardColors(containerColor = Color(0xFF1C2331)),
+        shape = RoundedCornerShape(16.dp),
+        elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+    ) {
+        Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            // Left area - Message
+            Column(
+                modifier = Modifier
+                    .weight(1f)
+                    .padding(8.dp),
+                horizontalAlignment = Alignment.Start
+            ) {
+                when (selectedIcon) {
+                    0 -> {
+                        Text("💧", fontSize = 28.sp)
+                        Text(
+                            "$hydrationStreak day streak",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Text(
+                            if (hydrationStreak > 0) "Yay! You're crushing your hydration goals!" else "Start sipping to build your streak!",
+                            color = Color.LightGray,
+                            fontSize = 12.sp
+                        )
+                    }
+                    1 -> {
+                        Text("🍽️", fontSize = 28.sp)
+                        Text(
+                            "$mealStreak day streak",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Text(
+                            if (mealStreak > 0) "Full meals logged daily. Great job!" else "Log all 4 meal types to build your streak!",
+                            color = Color.LightGray,
+                            fontSize = 12.sp
+                        )
+                    }
+                    2 -> {
+                        Text("💡", fontSize = 28.sp)
+                        Text(
+                            "Meal + Mood insights",
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White
+                        )
+                        Text(
+                            "Tap to discover what foods boost your mood & energy.",
+                            color = Color.LightGray,
+                            fontSize = 12.sp
+                        )
+                    }
+                }
+            }
+
+            // Right icon column
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier.padding(start = 12.dp)
+            ) {
+                IconButton(
+                    onClick = { selectedIcon = 0 },
+                    modifier = Modifier
+                        .size(42.dp)
+                        .background(if (selectedIcon == 0) Color.White else Color.Transparent, RoundedCornerShape(50))
+                ) {
+                    Text("💧")
+                }
+                IconButton(
+                    onClick = { selectedIcon = 1 },
+                    modifier = Modifier
+                        .size(42.dp)
+                        .background(if (selectedIcon == 1) Color.White else Color.Transparent, RoundedCornerShape(50))
+                ) {
+                    Text("🍽️")
+                }
+                IconButton(
+                    onClick = { selectedIcon = 2 },
+                    modifier = Modifier
+                        .size(42.dp)
+                        .background(if (selectedIcon == 2) Color.White else Color.Transparent, RoundedCornerShape(50))
+                ) {
+                    Text("💡")
+                }
+            }
+        }
+    }
+}
+
 
 
 
