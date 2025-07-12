@@ -4,4 +4,6 @@ enum class ScreenDestination {
     HYDRATION,
     MEAL_LOG,
     ANALYTICS
+
+
 }

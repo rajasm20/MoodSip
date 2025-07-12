@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -19,13 +20,21 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.stringPreferencesKey
 import com.example.moodsip.R
 import com.example.moodsip.data.DataStoreManager
+import com.example.moodsip.data.dataStore
 import com.example.moodsip.util.NotificationHelper
 import com.google.firebase.analytics.ktx.analytics
 import com.google.firebase.ktx.Firebase
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
+import java.io.BufferedReader
+import java.io.InputStreamReader
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -129,6 +138,7 @@ fun HydrationScreen(
                                     dataStore.saveGlasses(glassCount)
                                     dataStore.saveDailyGlasses(today, glassCount)
                                     dataStore.saveLogEntry(today, timestamp)
+
                                 }
                                 logList.add("Drank at $timestamp")
                                 mediaPlayer.start()
@@ -243,4 +253,9 @@ fun CelebrationOverlay(onDismiss: () -> Unit) {
         }
     }
 }
+
+
+
+
+
 

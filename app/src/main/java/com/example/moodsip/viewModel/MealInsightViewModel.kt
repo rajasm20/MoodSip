@@ -59,7 +59,7 @@ class MealInsightViewModel(private val dataStoreManager: MealDataStoreManager) :
             val dips = allMeals.filter { it.energyAfter < it.energyBefore }
             if (dips.size >= 3) insights.add("😫 ${dips.size} meals led to energy dips. Watch what drains you.")
 
-            // 7. Predictive insights from model
+            // 7. Predictive insights from model uploaded on Cloud
             val recentMeals = allMeals.takeLast(5)
             for (meal in recentMeals) {
                 try {

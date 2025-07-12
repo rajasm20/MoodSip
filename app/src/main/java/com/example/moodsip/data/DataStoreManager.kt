@@ -14,7 +14,7 @@ import java.util.Locale
 
 val Context.dataStore by preferencesDataStore("hydration_prefs")
 
-class DataStoreManager(private val context: Context) {
+class DataStoreManager(val context: Context) {
     private val GLASS_COUNT_KEY = intPreferencesKey("glass_count")
 
     // Save today's glass count (for hydration tracking screen)
