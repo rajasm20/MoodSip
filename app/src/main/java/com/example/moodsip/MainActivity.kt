@@ -86,6 +86,17 @@ class MainActivity : ComponentActivity() {
                     workRequest
                 )
             }
+            val navBarColor = when (selectedScreen) {
+                ScreenDestination.HYDRATION -> Color(0xFFBBDEFB)
+                ScreenDestination.MEAL_LOG -> Color(0xFFFFE0B2)
+                ScreenDestination.ANALYTICS -> Color(0xFFFFFFFF)
+            }
+
+            val selectedIconColor = when (selectedScreen) {
+                ScreenDestination.HYDRATION -> Color(0xFF2196F3)
+                ScreenDestination.MEAL_LOG -> Color(0xFFFF9800)
+                ScreenDestination.ANALYTICS -> Color(0xFF1C2331)
+            }
 
             HydrationAppTheme {
                 Scaffold(
@@ -99,7 +110,7 @@ class MainActivity : ComponentActivity() {
                             Card(
                                 shape = RoundedCornerShape(24.dp),
                                 elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                                colors = CardDefaults.cardColors(containerColor = Color.White),
+                                colors = CardDefaults.cardColors(containerColor = navBarColor),
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .height(64.dp)
@@ -113,21 +124,18 @@ class MainActivity : ComponentActivity() {
                                             Icon(
                                                 painter = painterResource(id = R.drawable.ic_hydration),
                                                 contentDescription = "Hydration",
-                                                tint = if (selectedScreen == ScreenDestination.HYDRATION) Color(0xFF2196F3) else Color.Unspecified
+                                                tint = if (selectedScreen == ScreenDestination.HYDRATION) selectedIconColor else Color.Gray
                                             )
                                         },
                                         label = {
-                                            Text(
-                                                "Hydration",
-                                                color = Color.Black
-                                            )
+                                            Text("Hydration", color = Color.Black)
                                         },
                                         selected = selectedScreen == ScreenDestination.HYDRATION,
                                         onClick = { selectedScreen = ScreenDestination.HYDRATION },
                                         colors = NavigationBarItemDefaults.colors(
-                                            indicatorColor = Color(0xFFBBDEFB),
-                                            selectedIconColor = Color(0xFF2196F3),
-                                            unselectedIconColor = Color.Unspecified,
+                                            indicatorColor = navBarColor,
+                                            selectedIconColor = selectedIconColor,
+                                            unselectedIconColor = Color.Gray,
                                             selectedTextColor = Color.Black,
                                             unselectedTextColor = Color.Black
                                         )
@@ -138,21 +146,18 @@ class MainActivity : ComponentActivity() {
                                             Icon(
                                                 painter = painterResource(id = R.drawable.ic_meal),
                                                 contentDescription = "Meal",
-                                                tint = if (selectedScreen == ScreenDestination.MEAL_LOG) Color(0xFF2196F3) else Color.Unspecified
+                                                tint = if (selectedScreen == ScreenDestination.MEAL_LOG) selectedIconColor else Color.Gray
                                             )
                                         },
                                         label = {
-                                            Text(
-                                                "Meal",
-                                                color = Color.Black
-                                            )
+                                            Text("Meal", color = Color.Black)
                                         },
                                         selected = selectedScreen == ScreenDestination.MEAL_LOG,
                                         onClick = { selectedScreen = ScreenDestination.MEAL_LOG },
                                         colors = NavigationBarItemDefaults.colors(
-                                            indicatorColor = Color(0xFFBBDEFB),
-                                            selectedIconColor = Color(0xFF2196F3),
-                                            unselectedIconColor = Color.Unspecified,
+                                            indicatorColor = navBarColor,
+                                            selectedIconColor = selectedIconColor,
+                                            unselectedIconColor = Color.Gray,
                                             selectedTextColor = Color.Black,
                                             unselectedTextColor = Color.Black
                                         )
@@ -163,26 +168,22 @@ class MainActivity : ComponentActivity() {
                                             Icon(
                                                 painter = painterResource(id = R.drawable.ic_analytics),
                                                 contentDescription = "Analytics",
-                                                tint = if (selectedScreen == ScreenDestination.ANALYTICS) Color(0xFF2196F3) else Color.Unspecified
+                                                tint = if (selectedScreen == ScreenDestination.ANALYTICS) selectedIconColor else Color.Gray
                                             )
                                         },
                                         label = {
-                                            Text(
-                                                "Analytics",
-                                                color = Color.Black
-                                            )
+                                            Text("Analytics", color = Color.Black)
                                         },
                                         selected = selectedScreen == ScreenDestination.ANALYTICS,
                                         onClick = { selectedScreen = ScreenDestination.ANALYTICS },
                                         colors = NavigationBarItemDefaults.colors(
-                                            indicatorColor = Color(0xFFBBDEFB),
-                                            selectedIconColor = Color(0xFF2196F3),
-                                            unselectedIconColor = Color.Unspecified,
+                                            indicatorColor = navBarColor,
+                                            selectedIconColor = selectedIconColor,
+                                            unselectedIconColor = Color.Gray,
                                             selectedTextColor = Color.Black,
                                             unselectedTextColor = Color.Black
                                         )
                                     )
-
                                 }
                             }
                         }
@@ -217,6 +218,9 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+
+
+
         }
     }
 }

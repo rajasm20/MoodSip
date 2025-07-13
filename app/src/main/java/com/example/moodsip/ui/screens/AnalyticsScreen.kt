@@ -15,6 +15,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -23,6 +24,7 @@ import com.example.moodsip.data.DataStoreManager
 import com.example.moodsip.data.MealDataStoreManager
 import com.example.moodsip.data.MealEntry
 import com.example.moodsip.ui.components.ChartMarkerView
+import com.example.moodsip.util.InsightUtils
 import com.maxkeppeker.sheets.core.models.base.rememberUseCaseState
 import com.maxkeppeler.sheets.calendar.CalendarDialog
 import com.maxkeppeler.sheets.calendar.models.CalendarConfig
@@ -505,26 +507,39 @@ fun StreakCardSection(
     var hydrationStreak by remember { mutableStateOf(0) }
     var mealStreak by remember { mutableStateOf(0) }
 
-    // Fetch streaks
+    val context = LocalContext.current
+    var insightsList by remember { mutableStateOf(listOf<String>()) }
+    var insightLoaded by remember { mutableStateOf(false) }
+
+    // Fetch hydration and meal streaks
     LaunchedEffect(Unit) {
-        // Hydration streak (goal met for consecutive days)
         val hydrationLogs = dataStore.getAllLogs().first()
-        val hydrationStreakCount = (0..30).takeWhile { offset ->
+        hydrationStreak = (0..30).takeWhile { offset ->
             val date = today.minusDays(offset.toLong()).format(formatter)
             val count = hydrationLogs[date] ?: 0
             val goal = dataStore.getDailyGoal(date).first() ?: 8
             count >= goal
         }.count()
-        hydrationStreak = hydrationStreakCount
 
-        // Meal streak (must log all 4: B, L, S, D)
-        val mealStreakCount = (0..30).takeWhile { offset ->
+        mealStreak = (0..30).takeWhile { offset ->
             val date = today.minusDays(offset.toLong()).format(formatter)
             val meals = mealDataStore.getMealsForDateSync(date)
             val typesLogged = meals.map { it.mealType }.distinct()
             listOf("Breakfast", "Lunch", "Snack", "Dinner").all { it in typesLogged }
         }.count()
-        mealStreak = mealStreakCount
+    }
+
+
+    val scope = rememberCoroutineScope()
+
+    LaunchedEffect(selectedIcon) {
+        if (selectedIcon == 2 && !insightLoaded) {
+            scope.launch {
+                val allInsights = InsightUtils.fetchInsights(context, dataStore, mealDataStore)
+                insightsList = allInsights.shuffled().take(2)
+                insightLoaded = true
+            }
+        }
     }
 
     Card(
@@ -546,11 +561,7 @@ fun StreakCardSection(
                 when (selectedIcon) {
                     0 -> {
                         Text("💧", fontSize = 28.sp)
-                        Text(
-                            "$hydrationStreak day streak",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
+                        Text("$hydrationStreak day streak", fontWeight = FontWeight.Bold, color = Color.White)
                         Text(
                             if (hydrationStreak > 0) "Yay! You're crushing your hydration goals!" else "Start sipping to build your streak!",
                             color = Color.LightGray,
@@ -559,11 +570,7 @@ fun StreakCardSection(
                     }
                     1 -> {
                         Text("🍽️", fontSize = 28.sp)
-                        Text(
-                            "$mealStreak day streak",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
+                        Text("$mealStreak day streak", fontWeight = FontWeight.Bold, color = Color.White)
                         Text(
                             if (mealStreak > 0) "Full meals logged daily. Great job!" else "Log all 4 meal types to build your streak!",
                             color = Color.LightGray,
@@ -572,17 +579,39 @@ fun StreakCardSection(
                     }
                     2 -> {
                         Text("💡", fontSize = 28.sp)
-                        Text(
-                            "Meal + Mood insights",
-                            fontWeight = FontWeight.Bold,
-                            color = Color.White
-                        )
-                        Text(
-                            "Tap to discover what foods boost your mood & energy.",
-                            color = Color.LightGray,
-                            fontSize = 12.sp
-                        )
+                        Text("Today’s Insights", fontWeight = FontWeight.Bold, fontSize = 16.sp, color = Color.White)
+
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        if (insightLoaded) {
+                            insightsList.forEach { insight ->
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp)
+                                ) {
+                                    Text(
+                                        text = insight.split("\n")[0], // First line (title)
+                                        fontSize = 14.sp,
+                                        fontWeight = FontWeight.Bold,
+                                        color = Color.White
+                                    )
+                                    Text(
+                                        text = insight.split("\n").drop(1).joinToString("\n"), // Rest of the lines
+                                        fontSize = 12.sp,
+                                        color = Color.LightGray
+                                    )
+                                }
+                            }
+                        } else {
+                            Text(
+                                "Fetching your mood & energy tips...",
+                                fontSize = 12.sp,
+                                color = Color.LightGray
+                            )
+                        }
                     }
+
                 }
             }
 
@@ -620,6 +649,8 @@ fun StreakCardSection(
         }
     }
 }
+
+
 
 
 
