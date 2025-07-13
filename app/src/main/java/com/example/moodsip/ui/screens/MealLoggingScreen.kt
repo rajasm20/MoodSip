@@ -62,7 +62,6 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
     val insights by viewModel.insightMessages.collectAsState()
     var showInsights by remember { mutableStateOf(false) }
 
-    if (showInsights) viewModel.generateInsights()
 
     Surface(modifier = Modifier.fillMaxSize(), color = Color(0xFFFFF3E0)) {
         LazyColumn(modifier = Modifier.fillMaxSize().padding(12.dp)) {
@@ -90,7 +89,10 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
 
                     Box(modifier = Modifier.padding(end = 6.dp)) {
                         IconButton(
-                            onClick = { showInsights = true },
+                            onClick = {
+                                showInsights = true
+                                viewModel.generateInsights() // Trigger here directly
+                            },
                             modifier = Modifier
                                 .size(36.dp)
                                 .background(Color.White, shape = RoundedCornerShape(18.dp))
@@ -204,6 +206,7 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
                         title = { Text("💡 Insights", fontWeight = FontWeight.Bold) },
                         text = {
                             Column(modifier = Modifier.fillMaxWidth()) {
+                                Log.d("InsightUI", "Insights: $insights")
                                 if (insights.isEmpty()) {
                                     Text("Nothing to see here yet. Come back after a few meals!", color = Color.Gray)
                                 } else {

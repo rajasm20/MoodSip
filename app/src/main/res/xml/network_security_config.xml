@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<network-security-config>
+    <!-- Block all cleartext (HTTP) traffic -->
+    <base-config cleartextTrafficPermitted="false" />
+
+    <!-- Allow secure HTTPS traffic to your backend -->
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">llm-meal-api-1040726950593.europe-west1.run.app</domain>
+    </domain-config>
+</network-security-config>
