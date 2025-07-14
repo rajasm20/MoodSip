@@ -136,7 +136,7 @@ object InsightUtils {
             messages.add("⏰🥗 Salad Effect Is Time-Dependent\nTiming matters even for healthy food!")
 
         if (hydrationStatus > 0.85 && junkFoodRatio < 0.25 && moodChange > 1.0)
-            messages.add("🔥📊 Most Predictive Trio for “Optimal” Days\nThese 3 metrics together accounted for 81% of your best days.")
+            messages.add("🔥📊 Most Predictive Trio for “Optimal” Days\n High Hydration💧 Low Junk Ratio🍔 and Stable Mood\uD83D\uDE0A together accounted for 81% of your best days.")
 
         if (messages.isEmpty()) messages.add("No significant insights today. Keep logging consistently!")
 
