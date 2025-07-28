@@ -3,6 +3,17 @@ package com.example.moodsip.ui.screens
 import android.content.Context
 import android.os.Bundle
 import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -16,9 +27,12 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -49,6 +63,8 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
     var selectedFoodCategory by remember { mutableStateOf("Home-Cooked") }
     var showMealTypeDialog by remember { mutableStateOf(false) }
     var showFoodCategoryDialog by remember { mutableStateOf(false) }
+    var showMoodInfo by remember { mutableStateOf(false) }
+    var showEnergyInfo by remember { mutableStateOf(false) }
     var mealName by remember { mutableStateOf("") }
     var moodBefore by remember { mutableStateOf(1f) }
     var moodAfter by remember { mutableStateOf(1f) }
@@ -127,14 +143,14 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
                             ),
                             modifier = Modifier.fillMaxWidth()
                         )
-                        Spacer(modifier = Modifier.height(12.dp))
-                        OrangeSlider("Mood Before Eating", moodBefore) { moodBefore = it }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        OrangeSlider("Mood After Eating", moodAfter) { moodAfter = it }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        OrangeSlider("Energy Before Eating", energyBefore) { energyBefore = it }
-                        Spacer(modifier = Modifier.height(12.dp))
-                        OrangeSlider("Energy After Eating", energyAfter) { energyAfter = it }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OrangeSlider("Mood Before Eating", moodBefore, { moodBefore = it }) { showMoodInfo = true }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OrangeSlider("Mood After Eating", moodAfter, { moodAfter = it }) { showMoodInfo = true }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OrangeSlider("Energy Before Eating", energyBefore, { energyBefore = it }) { showEnergyInfo = true }
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OrangeSlider("Energy After Eating", energyAfter, { energyAfter = it }) { showEnergyInfo = true }
                     }
                 }
             }
@@ -220,6 +236,14 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
                 }
             }
         }
+        if (showMoodInfo) {
+            MoodInfoDialog { showMoodInfo = false }
+        }
+
+        if (showEnergyInfo) {
+            EnergyInfoDialog { showEnergyInfo = false }
+        }
+
     }
     if (showMealTypeDialog) {
         MealTypeDialog(
@@ -278,28 +302,80 @@ fun SelectorCard(label: String, selected: String, icon: ImageVector, onClick: ()
 }
 
 @Composable
-fun OrangeSlider(label: String, value: Float, onValueChange: (Float) -> Unit) {
+fun OrangeSlider(label: String, value: Float, onValueChange: (Float) -> Unit, showInfoDialog: () -> Unit) {
+    val gradient = Brush.horizontalGradient(
+        colors = listOf(Color(0xFFFFF3E0), Color(0xFFFFCC80))
+    )
+    var showTooltip by remember { mutableStateOf(false) }
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+        ) {
+            Text(
+                label,
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color(0xFF6D4C41),
+                modifier = Modifier.weight(1f)
+            )
+            PulsingInfoIcon(onClick = showInfoDialog)
+        }
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(Color(0xFFFFF3E0), RoundedCornerShape(8.dp))
-                .padding(12.dp)
+                .background(gradient, RoundedCornerShape(12.dp))
+                .padding(horizontal = 12.dp, vertical = 20.dp) // Top padding allows space for tooltip
         ) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text(label, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = Color(0xFF6D4C41))
+            Box(modifier = Modifier.fillMaxWidth()) {
+                val percentage = (value - 1f) / 4f
+                if (showTooltip) {
+                    Box(
+                        modifier = Modifier
+                            .offset(x = (percentage * 240).dp - 12.dp, y = (-28).dp)
+                            .align(Alignment.TopStart)
+                            .background(Color.White, shape = RoundedCornerShape(6.dp))
+                            .border(1.dp, Color(0xFFFF9800), shape = RoundedCornerShape(6.dp))
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text("${value.toInt()}", color = Color(0xFF6D4C41), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+                }
                 Slider(
                     value = value,
-                    onValueChange = onValueChange,
+                    onValueChange = {
+                        onValueChange(it)
+                        showTooltip = true
+                    },
                     valueRange = 1f..5f,
                     steps = 3,
+                    onValueChangeFinished = { showTooltip = false },
                     colors = SliderDefaults.colors(
                         thumbColor = Color(0xFFFF9800),
                         activeTrackColor = Color(0xFFFF9800),
                         inactiveTrackColor = Color(0xFFFFCC80)
                     ),
-                    modifier = Modifier.height(24.dp)
+                    modifier = Modifier.fillMaxWidth()
                 )
+                if (showTooltip) {
+                    val percentage = (value - 1f) / 4f
+                    val alignment = Alignment.CenterStart
+                    val offset = with(LocalDensity.current) {
+                        val width = 240.dp.toPx()
+                        val thumbOffset = (percentage * width).dp
+                        Modifier.padding(start = thumbOffset)
+                    }
+                    Box(
+                        modifier = Modifier
+                            .offset(x = (percentage * 240).dp - 12.dp, y = (-28).dp)
+                            .align(Alignment.TopStart)
+                            .background(Color.White, shape = RoundedCornerShape(6.dp))
+                            .border(1.dp, Color(0xFFFF9800), shape = RoundedCornerShape(6.dp))
+                            .padding(horizontal = 8.dp, vertical = 2.dp)
+                    ) {
+                        Text("${value.toInt()}", color = Color(0xFF6D4C41), fontWeight = FontWeight.Bold, fontSize = 12.sp)
+                    }
+                }
             }
         }
     }
@@ -357,6 +433,28 @@ fun IconSelectorGrid(
 }
 
 @Composable
+fun PulsingInfoIcon(onClick: () -> Unit) {
+    val infiniteTransition = rememberInfiniteTransition()
+    val scale by infiniteTransition.animateFloat(
+        initialValue = 1f,
+        targetValue = 1.3f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(800),
+            repeatMode = RepeatMode.Reverse
+        )
+    )
+    IconButton(onClick = onClick, modifier = Modifier.scale(scale)) {
+        Icon(
+            imageVector = Icons.Default.Info,
+            contentDescription = "Info",
+            tint = Color(0xFFFF9800),
+            modifier = Modifier.size(22.dp)
+        )
+    }
+}
+
+
+@Composable
 fun MealTypeDialog(onSelect: (String) -> Unit, onDismiss: () -> Unit) {
     val mealTypes = listOf(
         "Breakfast" to Icons.Default.LocalCafe,
@@ -378,5 +476,76 @@ fun FoodCategoryDialog(onSelect: (String) -> Unit, onDismiss: () -> Unit) {
     )
     IconSelectorGrid("SELECT CATEGORY", categories, onSelect, onDismiss)
 }
+
+@Composable
+fun MoodInfoDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Mood Scale",
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF6D4C41),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp)
+                .wrapContentWidth(Alignment.CenterHorizontally)) },
+        text = {
+            Column {
+                MoodItem("5 - Blissful", "Excited, Delighted, Happy", Color(0xFFFFC107), "😄")
+                MoodItem("4 - Relaxed", "Content, Serene, Pleasure", Color(0xFFFFE082), "😊")
+                MoodItem("3 - Neutral", "Meh", Color(0xFFBCAAA4), "😐")
+                MoodItem("2 - Sad", "Disappointed, Bored, Depressed", Color(0xFF90CAF9), "😞")
+                MoodItem("1 - Angry", "Furious, Annoyed, Disgusted", Color(0xFFFF8A65), "😠")
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Got it") }
+        },
+        containerColor = Color(0xFFFFF3E0)
+    )
+}
+
+@Composable
+fun MoodItem(title: String, description: String, color: Color, emoji: String) {
+    Row(modifier = Modifier.padding(vertical = 6.dp), verticalAlignment = Alignment.CenterVertically) {
+        Text(emoji, fontSize = 20.sp)
+        Spacer(modifier = Modifier.width(6.dp))
+        Column {
+            Text(title, fontWeight = FontWeight.Bold, color = Color(0xFF6D4C41))
+            Text(description, fontSize = 12.sp, color = Color.DarkGray)
+        }
+    }
+}
+
+@Composable
+fun EnergyInfoDialog(onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Energy Scale",
+            fontWeight = FontWeight.Bold,
+            color = Color(0xFF6D4C41),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 12.dp)
+                .wrapContentWidth(Alignment.CenterHorizontally)) },
+        text = {
+            Column {
+                MoodItem("5 - Supercharged", "Energized, Focused, Active", Color(0xFF81C784), "⚡")
+                MoodItem("4 - Alert", "Motivated, Fresh, Light", Color(0xFFA5D6A7), "🌟")
+                MoodItem("3 - Neutral", "Normal, Stable", Color(0xFFBCAAA4), "🙂")
+                MoodItem("2 - Tired", "Low, Slow, Yawning", Color(0xFF90CAF9), "😴")
+                MoodItem("1 - Exhausted", "Lethargic, Sleepy, Drained", Color(0xFFE57373), "🥱")
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = onDismiss) { Text("Got it") }
+        },
+        containerColor = Color(0xFFFFF3E0)
+    )
+}
+
+
+
+
+
 
 
