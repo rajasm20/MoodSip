@@ -1,11 +1,12 @@
 package com.example.moodsip
 
-import com.example.moodsip.ui.screens.AnalyticsScreen
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.media.MediaPlayer
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,7 +14,10 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.work.*
@@ -25,17 +29,18 @@ import com.example.moodsip.ui.theme.HydrationAppTheme
 import com.example.moodsip.worker.HydrationWorker
 import com.google.firebase.ktx.Firebase
 import com.google.firebase.remoteconfig.ktx.remoteConfig
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
+import androidx.compose.animation.core.*
 
 class MainActivity : ComponentActivity() {
 
     private lateinit var dataStore: DataStoreManager
     private lateinit var mealDataStore: MealDataStoreManager
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -51,9 +56,11 @@ class MainActivity : ComponentActivity() {
         }
 
         setContent {
+            var showSplash by remember { mutableStateOf(true) }
             var showCelebration by remember { mutableStateOf(false) }
             var temperature by remember { mutableStateOf<Float?>(null) }
             var selectedScreen by remember { mutableStateOf(ScreenDestination.HYDRATION) }
+
             val scope = rememberCoroutineScope()
 
             LaunchedEffect(Unit) {
@@ -86,141 +93,143 @@ class MainActivity : ComponentActivity() {
                     workRequest
                 )
             }
-            val navBarColor = when (selectedScreen) {
-                ScreenDestination.HYDRATION -> Color(0xFFBBDEFB)
-                ScreenDestination.MEAL_LOG -> Color(0xFFFFE0B2)
-                ScreenDestination.ANALYTICS -> Color(0xFFFFFFFF)
-            }
-
-            val selectedIconColor = when (selectedScreen) {
-                ScreenDestination.HYDRATION -> Color(0xFF2196F3)
-                ScreenDestination.MEAL_LOG -> Color(0xFFFF9800)
-                ScreenDestination.ANALYTICS -> Color(0xFF1C2331)
-            }
 
             HydrationAppTheme {
-                Scaffold(
-                    bottomBar = {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 24.dp, vertical = 12.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Card(
-                                shape = RoundedCornerShape(24.dp),
-                                elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
-                                colors = CardDefaults.cardColors(containerColor = navBarColor),
+                if (showSplash) {
+                    SplashScreen {
+                        showSplash = false
+                    }
+                } else {
+                    val navBarColor = when (selectedScreen) {
+                        ScreenDestination.HYDRATION -> Color(0xFFBBDEFB)
+                        ScreenDestination.MEAL_LOG -> Color(0xFFFFE0B2)
+                        ScreenDestination.ANALYTICS -> Color(0xFFFFFFFF)
+                    }
+
+                    val selectedIconColor = when (selectedScreen) {
+                        ScreenDestination.HYDRATION -> Color(0xFF2196F3)
+                        ScreenDestination.MEAL_LOG -> Color(0xFFFF9800)
+                        ScreenDestination.ANALYTICS -> Color(0xFF1C2331)
+                    }
+
+                    Scaffold(
+                        bottomBar = {
+                            Box(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .height(64.dp)
+                                    .padding(horizontal = 24.dp, vertical = 12.dp),
+                                contentAlignment = Alignment.Center
                             ) {
-                                NavigationBar(
-                                    containerColor = Color.Transparent,
-                                    tonalElevation = 0.dp
+                                Card(
+                                    shape = RoundedCornerShape(24.dp),
+                                    elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+                                    colors = CardDefaults.cardColors(containerColor = navBarColor),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .height(64.dp)
                                 ) {
-                                    NavigationBarItem(
-                                        icon = {
-                                            Icon(
-                                                painter = painterResource(id = R.drawable.ic_hydration),
-                                                contentDescription = "Hydration",
-                                                tint = if (selectedScreen == ScreenDestination.HYDRATION) selectedIconColor else Color.Gray
+                                    NavigationBar(
+                                        containerColor = Color.Transparent,
+                                        tonalElevation = 0.dp
+                                    ) {
+                                        NavigationBarItem(
+                                            icon = {
+                                                Icon(
+                                                    painter = painterResource(id = R.drawable.ic_hydration),
+                                                    contentDescription = "Hydration",
+                                                    tint = if (selectedScreen == ScreenDestination.HYDRATION) selectedIconColor else Color.Gray
+                                                )
+                                            },
+                                            label = {
+                                                Text("Hydration", color = Color.Black)
+                                            },
+                                            selected = selectedScreen == ScreenDestination.HYDRATION,
+                                            onClick = { selectedScreen = ScreenDestination.HYDRATION },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                indicatorColor = navBarColor,
+                                                selectedIconColor = selectedIconColor,
+                                                unselectedIconColor = Color.Gray,
+                                                selectedTextColor = Color.Black,
+                                                unselectedTextColor = Color.Black
                                             )
-                                        },
-                                        label = {
-                                            Text("Hydration", color = Color.Black)
-                                        },
-                                        selected = selectedScreen == ScreenDestination.HYDRATION,
-                                        onClick = { selectedScreen = ScreenDestination.HYDRATION },
-                                        colors = NavigationBarItemDefaults.colors(
-                                            indicatorColor = navBarColor,
-                                            selectedIconColor = selectedIconColor,
-                                            unselectedIconColor = Color.Gray,
-                                            selectedTextColor = Color.Black,
-                                            unselectedTextColor = Color.Black
                                         )
-                                    )
 
-                                    NavigationBarItem(
-                                        icon = {
-                                            Icon(
-                                                painter = painterResource(id = R.drawable.ic_meal),
-                                                contentDescription = "Meal",
-                                                tint = if (selectedScreen == ScreenDestination.MEAL_LOG) selectedIconColor else Color.Gray
+                                        NavigationBarItem(
+                                            icon = {
+                                                Icon(
+                                                    painter = painterResource(id = R.drawable.ic_meal),
+                                                    contentDescription = "Meal",
+                                                    tint = if (selectedScreen == ScreenDestination.MEAL_LOG) selectedIconColor else Color.Gray
+                                                )
+                                            },
+                                            label = {
+                                                Text("Meal", color = Color.Black)
+                                            },
+                                            selected = selectedScreen == ScreenDestination.MEAL_LOG,
+                                            onClick = { selectedScreen = ScreenDestination.MEAL_LOG },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                indicatorColor = navBarColor,
+                                                selectedIconColor = selectedIconColor,
+                                                unselectedIconColor = Color.Gray,
+                                                selectedTextColor = Color.Black,
+                                                unselectedTextColor = Color.Black
                                             )
-                                        },
-                                        label = {
-                                            Text("Meal", color = Color.Black)
-                                        },
-                                        selected = selectedScreen == ScreenDestination.MEAL_LOG,
-                                        onClick = { selectedScreen = ScreenDestination.MEAL_LOG },
-                                        colors = NavigationBarItemDefaults.colors(
-                                            indicatorColor = navBarColor,
-                                            selectedIconColor = selectedIconColor,
-                                            unselectedIconColor = Color.Gray,
-                                            selectedTextColor = Color.Black,
-                                            unselectedTextColor = Color.Black
                                         )
-                                    )
 
-                                    NavigationBarItem(
-                                        icon = {
-                                            Icon(
-                                                painter = painterResource(id = R.drawable.ic_analytics),
-                                                contentDescription = "Analytics",
-                                                tint = if (selectedScreen == ScreenDestination.ANALYTICS) selectedIconColor else Color.Gray
+                                        NavigationBarItem(
+                                            icon = {
+                                                Icon(
+                                                    painter = painterResource(id = R.drawable.ic_analytics),
+                                                    contentDescription = "Analytics",
+                                                    tint = if (selectedScreen == ScreenDestination.ANALYTICS) selectedIconColor else Color.Gray
+                                                )
+                                            },
+                                            label = {
+                                                Text("Analytics", color = Color.Black)
+                                            },
+                                            selected = selectedScreen == ScreenDestination.ANALYTICS,
+                                            onClick = { selectedScreen = ScreenDestination.ANALYTICS },
+                                            colors = NavigationBarItemDefaults.colors(
+                                                indicatorColor = navBarColor,
+                                                selectedIconColor = selectedIconColor,
+                                                unselectedIconColor = Color.Gray,
+                                                selectedTextColor = Color.Black,
+                                                unselectedTextColor = Color.Black
                                             )
-                                        },
-                                        label = {
-                                            Text("Analytics", color = Color.Black)
-                                        },
-                                        selected = selectedScreen == ScreenDestination.ANALYTICS,
-                                        onClick = { selectedScreen = ScreenDestination.ANALYTICS },
-                                        colors = NavigationBarItemDefaults.colors(
-                                            indicatorColor = navBarColor,
-                                            selectedIconColor = selectedIconColor,
-                                            unselectedIconColor = Color.Gray,
-                                            selectedTextColor = Color.Black,
-                                            unselectedTextColor = Color.Black
                                         )
-                                    )
+                                    }
                                 }
                             }
                         }
-                    }
-                ) { paddingValues ->
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(paddingValues)
-                    ) {
-                        when (selectedScreen) {
-                            ScreenDestination.HYDRATION -> HydrationScreen(
-                                dataStore = dataStore,
-                                temperature = temperature,
-                                latestTemperature = latestTemperature,
-                                onCelebration = { showCelebration = true }
-                            )
-                            ScreenDestination.MEAL_LOG -> {
-                                MealLoggerScreen(mealDataStore)
-                            }
-                            ScreenDestination.ANALYTICS -> {
-                                AnalyticsScreen(
+                    ) { paddingValues ->
+                        Box(
+                            modifier = Modifier
+                                .fillMaxSize()
+                                .padding(paddingValues)
+                        ) {
+                            when (selectedScreen) {
+                                ScreenDestination.HYDRATION -> HydrationScreen(
+                                    dataStore = dataStore,
+                                    temperature = temperature,
+                                    latestTemperature = latestTemperature,
+                                    onCelebration = { showCelebration = true }
+                                )
+
+                                ScreenDestination.MEAL_LOG -> MealLoggerScreen(mealDataStore)
+
+                                ScreenDestination.ANALYTICS -> AnalyticsScreen(
                                     dataStore = dataStore,
                                     mealDataStore = mealDataStore
                                 )
                             }
-                        }
 
-                        if (showCelebration) {
-                            CelebrationOverlay { showCelebration = false }
+                            if (showCelebration) {
+                                CelebrationOverlay { showCelebration = false }
+                            }
                         }
                     }
                 }
             }
-
-
-
         }
     }
 }
