@@ -398,7 +398,7 @@ fun AnalyticsCharts(
         }
     }
 
-    // 🔲 Wrap chart section in Card
+    //Wrap chart section in Card
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -409,7 +409,7 @@ fun AnalyticsCharts(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
 
-            // 📉 Title as Dropdown Row with arrow
+            //Title as Dropdown Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -426,7 +426,7 @@ fun AnalyticsCharts(
                             modifier = Modifier.padding(end = 4.dp)
                         )
                         Text(
-                            text = "▼", // dropdown arrow
+                            text = "▼",
                             fontSize = 14.sp,
                             color = Color.Gray
                         )
@@ -455,7 +455,7 @@ fun AnalyticsCharts(
                     }
                 }
 
-                // 📆 Range Selector Buttons
+                // Range Selector for chart, modify later
                 Row {
                     listOf(7 to "1W", 14 to "2W", 28 to "4W").forEach { (days, label) ->
                         val selected = selectedRange == days
@@ -484,7 +484,7 @@ fun AnalyticsCharts(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // 📊 Chart itself
+            // chart itself
             LineChartFixed(
                 title = selectedChartType,
                 entries = entries,
@@ -500,7 +500,7 @@ fun StreakCardSection(
     dataStore: DataStoreManager,
     mealDataStore: MealDataStoreManager
 ) {
-    var selectedIcon by remember { mutableStateOf(0) } // 0 = hydration, 1 = meal, 2 = insights
+    var selectedIcon by remember { mutableStateOf(0) }
     val today = LocalDate.now()
     val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
 
@@ -551,7 +551,7 @@ fun StreakCardSection(
         elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
     ) {
         Row(modifier = Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
-            // Left area - Message
+
             Column(
                 modifier = Modifier
                     .weight(1f)
@@ -591,13 +591,13 @@ fun StreakCardSection(
                                         .padding(vertical = 8.dp)
                                 ) {
                                     Text(
-                                        text = insight.split("\n")[0], // First line (title)
+                                        text = insight.split("\n")[0],
                                         fontSize = 14.sp,
                                         fontWeight = FontWeight.Bold,
                                         color = Color.White
                                     )
                                     Text(
-                                        text = insight.split("\n").drop(1).joinToString("\n"), // Rest of the lines
+                                        text = insight.split("\n").drop(1).joinToString("\n"),
                                         fontSize = 12.sp,
                                         color = Color.LightGray
                                     )

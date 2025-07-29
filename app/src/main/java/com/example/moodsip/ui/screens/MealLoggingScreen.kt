@@ -107,7 +107,7 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
                         IconButton(
                             onClick = {
                                 showInsights = true
-                                viewModel.generateInsights() // Trigger here directly
+                                viewModel.generateInsights() //trigger here directly
                             },
                             modifier = Modifier
                                 .size(36.dp)
@@ -325,7 +325,7 @@ fun OrangeSlider(label: String, value: Float, onValueChange: (Float) -> Unit, sh
             modifier = Modifier
                 .fillMaxWidth()
                 .background(gradient, RoundedCornerShape(12.dp))
-                .padding(horizontal = 12.dp, vertical = 20.dp) // Top padding allows space for tooltip
+                .padding(horizontal = 12.dp, vertical = 20.dp) //critical padding do not change rajas !!!!!
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 val percentage = (value - 1f) / 4f

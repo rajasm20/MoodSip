@@ -1,6 +1,4 @@
-// SplashScreen.kt
 package com.example.moodsip.ui.screens
-
 import android.media.MediaPlayer
 import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
