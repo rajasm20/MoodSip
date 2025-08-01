@@ -73,8 +73,16 @@ class MainActivity : ComponentActivity() {
                         .build()
 
                     val service = retrofit.create(WeatherService::class.java)
-                    val response = service.getWeather("London", "f7b60d5f4218e4937e14d28b42888bc5")
-                    val temp = response.main.temp
+
+                    val response = service.getForecast("London", "f7b60d5f4218e4937e14d28b42888bc5")
+
+                    // 🔍 Find next 3 PM forecast
+                    val forecastAt3PM = response.list.firstOrNull {
+                        it.dt_txt.contains("15:00:00")
+                    }
+
+                    val temp = forecastAt3PM?.main?.temp
+
                     temperature = temp
                     latestTemperature = temp
                 } catch (e: Exception) {
@@ -93,6 +101,7 @@ class MainActivity : ComponentActivity() {
                     workRequest
                 )
             }
+
 
             HydrationAppTheme {
                 if (showSplash) {

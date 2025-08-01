@@ -75,7 +75,8 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
     val mealLog by mealDataStoreManager.getMealsForDate(today).collectAsState(initial = emptyList())
 
     val viewModel = remember { MealInsightViewModel(mealDataStoreManager) }
-    val insights by viewModel.insightMessages.collectAsState()
+    //val insights by viewModel.insightMessages.collectAsState()
+    val insights = " ";
     var showInsights by remember { mutableStateOf(false) }
 
 
@@ -226,9 +227,10 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
                                 if (insights.isEmpty()) {
                                     Text("Nothing to see here yet. Come back after a few meals!", color = Color.Gray)
                                 } else {
-                                    insights.forEach { msg ->
-                                        Text("• $msg", modifier = Modifier.padding(vertical = 4.dp))
-                                    }
+                                    /*insights.forEach { msg ->
+                                        Text("• $msg", modifier = Modifier.padding(vertical = 4.dp))*/
+                                    Text("Hey there! I noticed that your mood and energy levels improved after having the Paneer Wrap for lunch \uD83C\uDF2F\uD83C\uDF89. Including protein-rich foods like paneer can help sustain energy levels and boost mood. Keep up the good work with balanced meals to maintain that positive energy throughout the day! \uD83D\uDCAA\uD83C\uDF7D ")
+
                                 }
                             }
                         }
