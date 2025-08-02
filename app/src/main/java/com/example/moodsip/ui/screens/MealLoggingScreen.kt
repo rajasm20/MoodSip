@@ -34,7 +34,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.preferences.core.Preferences
@@ -75,8 +79,7 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
     val mealLog by mealDataStoreManager.getMealsForDate(today).collectAsState(initial = emptyList())
 
     val viewModel = remember { MealInsightViewModel(mealDataStoreManager) }
-    //val insights by viewModel.insightMessages.collectAsState()
-    val insights = " ";
+    val insights by viewModel.insightMessages.collectAsState()
     var showInsights by remember { mutableStateOf(false) }
 
 
@@ -213,34 +216,19 @@ fun MealLoggerScreen(mealDataStoreManager: MealDataStoreManager) {
             }
 
 
-            if (showInsights) {
-                item {
-                    AlertDialog(
-                        onDismissRequest = { showInsights = false },
-                        confirmButton = {
-                            TextButton(onClick = { showInsights = false }) { Text("Close") }
-                        },
-                        title = { Text("💡 Insights", fontWeight = FontWeight.Bold) },
-                        text = {
-                            Column(modifier = Modifier.fillMaxWidth()) {
-                                Log.d("InsightUI", "Insights: $insights")
-                                if (insights.isEmpty()) {
-                                    Text("Nothing to see here yet. Come back after a few meals!", color = Color.Gray)
-                                } else {
-                                    /*insights.forEach { msg ->
-                                        Text("• $msg", modifier = Modifier.padding(vertical = 4.dp))*/
-                                    Text("Hey there! I noticed that your mood and energy levels improved after having the Paneer Wrap for lunch \uD83C\uDF2F\uD83C\uDF89. Including protein-rich foods like paneer can help sustain energy levels and boost mood. Keep up the good work with balanced meals to maintain that positive energy throughout the day! \uD83D\uDCAA\uD83C\uDF7D ")
 
-                                }
-                            }
-                        }
-                    )
-                }
-            }
         }
+        if (showInsights) {
+            InsightsDialog(
+                insights = insights,
+                onDismiss = { showInsights = false }
+            )
+        }
+
         if (showMoodInfo) {
             MoodInfoDialog { showMoodInfo = false }
         }
+
 
         if (showEnergyInfo) {
             EnergyInfoDialog { showEnergyInfo = false }
@@ -327,7 +315,7 @@ fun OrangeSlider(label: String, value: Float, onValueChange: (Float) -> Unit, sh
             modifier = Modifier
                 .fillMaxWidth()
                 .background(gradient, RoundedCornerShape(12.dp))
-                .padding(horizontal = 12.dp, vertical = 20.dp) //critical padding do not change rajas !!!!!
+                .padding(horizontal = 12.dp, vertical = 20.dp) //critical padding do not change!!!!!
         ) {
             Box(modifier = Modifier.fillMaxWidth()) {
                 val percentage = (value - 1f) / 4f
@@ -544,6 +532,55 @@ fun EnergyInfoDialog(onDismiss: () -> Unit) {
         containerColor = Color(0xFFFFF3E0)
     )
 }
+
+@Composable
+fun InsightsDialog(
+    insights: List<String>,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        containerColor = Color(0xFFFFF3E0),
+        onDismissRequest = onDismiss,
+        confirmButton = {
+                Column(
+                    modifier = Modifier
+                        .padding(16.dp)
+                        .fillMaxWidth(),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Text(
+                        text = "Insights💡",
+                        fontWeight = FontWeight.Bold,
+                        color = Color(0xFF6D4C41),
+                        modifier = Modifier.fillMaxWidth(),
+                        textAlign = TextAlign.Center,
+                        fontSize = 20.sp
+                    )
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (insights.isEmpty()) {
+                        Text(
+                            "Nothing to see here yet. Come back after a few meals!",
+                            color = Color.Gray,
+                            textAlign = TextAlign.Center
+                        )
+                    } else {
+                        insights.forEach { msg ->
+                                        Text("• $msg", modifier = Modifier.padding(vertical = 4.dp))}
+                    }
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    TextButton(onClick = onDismiss) {
+                        Text("Close", color = Color(0xFF6D4C41))
+                    }
+                }
+
+        }
+    )
+}
+
 
 
 

@@ -17,7 +17,7 @@ val Context.dataStore by preferencesDataStore("hydration_prefs")
 class DataStoreManager(val context: Context) {
     private val GLASS_COUNT_KEY = intPreferencesKey("glass_count")
 
-    // Save today's glass count (for hydration tracking screen)
+
     suspend fun saveGlasses(count: Int) {
         context.dataStore.edit { prefs ->
             prefs[GLASS_COUNT_KEY] = count
@@ -30,7 +30,7 @@ class DataStoreManager(val context: Context) {
         }
     }
 
-    // Save glass count for a specific date (e.g., 2025-07-09)
+
     suspend fun saveDailyGlasses(date: String, count: Int) {
         context.dataStore.edit { prefs ->
             val key = stringPreferencesKey("daily_$date")
@@ -38,7 +38,7 @@ class DataStoreManager(val context: Context) {
         }
     }
 
-    // Get all daily logs from preferences (Map<yyyy-MM-dd, Int>)
+
     fun getAllLogs(): Flow<Map<String, Int>> {
         return context.dataStore.data.map { prefs ->
             prefs.asMap().mapNotNull { entry ->

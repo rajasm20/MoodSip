@@ -1,4 +1,3 @@
-// MealInsightApi.kt
 package com.example.moodsip.network
 
 import retrofit2.http.Body
@@ -29,7 +28,7 @@ interface MealInsightApi {
     companion object {
         fun create(): MealInsightApi {
             return Retrofit.Builder()
-                .baseUrl("https://meal-insight-model-1040726950593.europe-west1.run.app/")
+                .baseUrl("MEAL_INSIGHT_API")
                 .addConverterFactory(GsonConverterFactory.create())
                 .build()
                 .create(MealInsightApi::class.java)

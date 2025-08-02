@@ -74,9 +74,9 @@ class MainActivity : ComponentActivity() {
 
                     val service = retrofit.create(WeatherService::class.java)
 
-                    val response = service.getForecast("London", "f7b60d5f4218e4937e14d28b42888bc5")
+                    val response = service.getForecast("London", "WEATHER_API_KEY")
 
-                    // 🔍 Find next 3 PM forecast
+
                     val forecastAt3PM = response.list.firstOrNull {
                         it.dt_txt.contains("15:00:00")
                     }

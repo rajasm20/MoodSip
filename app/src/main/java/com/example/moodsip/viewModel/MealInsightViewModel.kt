@@ -36,7 +36,7 @@ class MealInsightViewModel(private val dataStoreManager: MealDataStoreManager) :
             val recentMeals = allMeals.takeLast(5)
             val insights = mutableListOf<String>()
 
-            // Local rule-based insights
+            //Local rule-based insights
             for (meal in recentMeals) {
                 try {
                     val response = api.getInsights(
@@ -65,7 +65,7 @@ class MealInsightViewModel(private val dataStoreManager: MealDataStoreManager) :
                 }
             }
 
-            // LLM-backed insights
+            //llm backed insights
             try {
                 val llmMeals = recentMeals.map {
                     LLMMealEntry(

@@ -14,7 +14,7 @@ interface LLMInsightApi {
     companion object {
         fun create(): LLMInsightApi {
             val retrofit = retrofit2.Retrofit.Builder()
-                .baseUrl("https://llm-meal-api-1040726950593.europe-west1.run.app/")
+                .baseUrl("LLM_INSIGHT_URL")
                 .addConverterFactory(retrofit2.converter.gson.GsonConverterFactory.create())
                 .build()
             return retrofit.create(LLMInsightApi::class.java)

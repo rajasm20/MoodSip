@@ -6,7 +6,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 object RetrofitClient {
     val instance: PredictionService by lazy {
         Retrofit.Builder()
-            .baseUrl(" https://hydration-api-1040726950593.europe-west1.run.app/")
+            .baseUrl("HYDRATION_API_URL")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(PredictionService::class.java)

@@ -4,7 +4,7 @@ import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
 object InsightRetrofitClient {
-    private const val BASE_URL = "https://analytics-insight-api-1040726950593.europe-west1.run.app/"
+    private const val BASE_URL = "ANALYTICS_API_URL"
 
     val api: InsightApi by lazy {
         Retrofit.Builder()

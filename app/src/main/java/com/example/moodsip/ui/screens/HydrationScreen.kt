@@ -71,7 +71,7 @@ fun HydrationScreen(
         }
     }
 
-    // Temperature-based goal logic
+    //Temperature-based goal logic
     LaunchedEffect(temperature) {
         temperature?.let {
             val baseGoal = 8
@@ -231,10 +231,15 @@ fun HydrationScreen(
                                     }
                                     logList.add("Drank at $timestamp")
                                     mediaPlayer.start()
+                                    /*
+                                    Point to note is the notifications are indeed smart just for the demo purposes,
+                                    i have implemented them here rule based as well otherwise its handled by the workmanager
+                                    Refer NotificationHelper.kt for deep dive
+                                    */
                                     when (glassCount) {
-                                        1 -> NotificationHelper.showFirstGlassNotification(context)
-                                        hydrationGoal / 2 -> NotificationHelper.showHalfwayNotification(context)
-                                        hydrationGoal - 1 -> NotificationHelper.showAlmostThereNotification(context)
+                                        1 -> NotificationHelper.showFirstGlassNotification(context)// rule based just for demo purposes
+                                        hydrationGoal / 2 -> NotificationHelper.showHalfwayNotification(context)// rule based just for demo purposes
+                                        hydrationGoal - 1 -> NotificationHelper.showAlmostThereNotification(context)// rule based just for demo purposes
                                     }
                                     analytics.logEvent("glass_logged", Bundle().apply {
                                         putInt("glass_count", glassCount)
